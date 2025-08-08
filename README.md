@@ -18,6 +18,54 @@ creating, retrieving, updating, and deleting records.
 - **Soft Deletes**: Option to soft delete records instead of permanent deletion
 - **Payload Search**: Search for records based on content within the payload
 - **Debug Mode**: Enable debug mode for detailed logging
+- **Schema-less Payloads**: Store any JSON structure without altering DB schema
+- **Document-store Feel on SQL**: Document flexibility with SQL power and tooling
+
+## Document-store versatility on SQL
+
+Customstore lets you keep your data model fluid like a document store while using a single SQL table under the hood. No migrations for shape changes—just evolve your JSON payloads.
+
+- __Any shape__: nested objects, arrays, primitives
+- __No schema changes__: add/remove fields freely
+- __SQL-compatible__: keep transactions, indexes, and familiar tooling
+
+Example: store different shapes without migrations
+
+```go
+// A user document
+user := customstore.NewRecord(
+    "user",
+    customstore.WithPayloadMap(map[string]any{
+        "name":  "Ada",
+        "roles": []any{"admin", "editor"},
+        "prefs": map[string]any{"theme": "dark"},
+    }),
+)
+_ = store.RecordCreate(user)
+
+// A product document with a very different shape
+product := customstore.NewRecord(
+    "product",
+    customstore.WithPayloadMap(map[string]any{
+        "sku":   "SKU-001",
+        "price": 19.99,
+        "tags":  []any{"new", "promo"},
+    }),
+)
+_ = store.RecordCreate(product)
+```
+
+Query by payload content (driver-dependent implementation uses JSON string search):
+
+```go
+// Find active users named Ada
+q := customstore.RecordQuery().
+    SetType("user").
+    AddPayloadSearch(`"name": "Ada"`).
+    AddPayloadSearch(`"active": true`)
+list, err := store.RecordList(q)
+if err != nil { panic(err) }
+```
 
 ## Installation
 
