@@ -1,4 +1,4 @@
-module github.com/gouniverse/customstore
+module github.com/dracory/customstore
 
 go 1.23.3
 
@@ -17,10 +17,8 @@ require (
 require (
 	github.com/georgysavva/scany v1.2.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gouniverse/envenc v0.10.0 // indirect
 	github.com/gouniverse/maputils v0.7.0 // indirect
-	golang.org/x/crypto v0.37.0 // indirect
-	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )
