@@ -137,103 +137,93 @@ func (o *recordQueryImplementation) ToSelectDataset(driver string, table string)
 		return q, []any{}, nil // soft deleted sites requested specifically
 	}
 
-	// if o.IsCreatedAtGteSet() && o.IsCreatedAtLteSet() {
-	// 	q = q.Where(
-	// 		goqu.C(COLUMN_CREATED_AT).Gte(o.GetCreatedAtGte()),
-	// 		goqu.C(COLUMN_CREATED_AT).Lte(o.GetCreatedAtLte()),
-	// 	)
-	// } else if o.IsCreatedAtGteSet() {
-	// 	q = q.Where(goqu.C(COLUMN_CREATED_AT).Gte(o.GetCreatedAtGte()))
-	// } else if o.IsCreatedAtLteSet() {
-	// 	q = q.Where(goqu.C(COLUMN_CREATED_AT).Lte(o.GetCreatedAtLte()))
-	// }
-
+	// Basic filters
 	if o.IsIDSet() {
 		q = q.Where(goqu.C(COLUMN_ID).Eq(o.GetID()))
 	}
 
-	// if o.IsIDInSet() {
-	// 	q = q.Where(goqu.C(COLUMN_ID).In(o.GetIDIn()))
-	// }
+	// Payload conditions
+	q = o.applyPayloadWhere(q)
 
-	// if o.IsNameLikeSet() {
-	// 	q = q.Where(goqu.C(COLUMN_NAME).Like("%" + o.GetNameLike() + "%"))
-	// }
+	// Pagination and ordering
+	q = o.applyPagination(q)
+	q = o.applyOrderBy(q, sb.DESC)
 
-	// if o.IsStatusSet() {
-	// 	q = q.Where(goqu.C(COLUMN_STATUS).Eq(o.GetStatus()))
-	// }
+	// Selected columns
+	columns = o.selectedColumns()
 
-	// if o.IsStatusInSet() {
-	// 	q = q.Where(goqu.C(COLUMN_STATUS).In(o.GetStatusIn()))
-	// }
-
-	// Add payload search conditions
-	conditions := []goqu.Expression{}
-
-	if len(o.payloadSearch) > 0 {
-		orConditions := []goqu.Expression{}
-		for _, value := range o.payloadSearch {
-			orConditions = append(orConditions, goqu.I("payload").Like("%"+value+"%"))
-		}
-		conditions = append(conditions, goqu.Or(orConditions...))
-	}
-
-	if len(o.payloadSearchNot) > 0 {
-		for _, value := range o.payloadSearchNot {
-			conditions = append(conditions, goqu.I("payload").NotLike("%"+value+"%"))
-		}
-	}
-
-	if len(conditions) > 0 {
-		q = q.Where(goqu.And(conditions...))
-	}
-
-	if o.IsOffsetSet() && !o.IsLimitSet() {
-		o.SetLimit(10) // offset always requires limit to be set
-	}
-
-	if !o.IsCountOnly() {
-		if o.IsLimitSet() {
-			q = q.Limit(uint(o.GetLimit()))
-		}
-
-		if o.IsOffsetSet() {
-			q = q.Offset(uint(o.GetOffset()))
-		}
-	}
-
-	sortOrder := sb.DESC
-	// if o.IsSortOrderSet() {
-	// 	sortOrder = o.GetSortOrder()
-	// }
-
-	if o.IsOrderBySet() {
-		if strings.EqualFold(sortOrder, sb.ASC) {
-			q = q.Order(goqu.I(o.GetOrderBy()).Asc())
-		} else {
-			q = q.Order(goqu.I(o.GetOrderBy()).Desc())
-		}
-	}
-
-	columns = []any{}
-
-	for _, column := range o.GetColumns() {
-		columns = append(columns, column)
-	}
-
-	if o.IsSoftDeletedIncluded() {
-		return q, columns, nil // soft deleted sites requested specifically
-	}
-
-	softDeleted := goqu.C(COLUMN_SOFT_DELETED_AT).
-		Gt(carbon.Now(carbon.UTC).ToDateTimeString())
-
+	// Soft-delete and type constraints
 	if o.IsTypeSet() {
 		q = q.Where(goqu.C(COLUMN_RECORD_TYPE).Eq(o.GetType()))
 	}
+	return q.Where(o.softDeletedExpr()), columns, nil
+}
 
-	return q.Where(softDeleted), columns, nil
+// applyPayloadWhere applies payload include/exclude conditions.
+func (o *recordQueryImplementation) applyPayloadWhere(q *goqu.SelectDataset) *goqu.SelectDataset {
+	conds := []goqu.Expression{}
+
+	if len(o.payloadSearch) > 0 {
+		ors := make([]goqu.Expression, 0, len(o.payloadSearch))
+		for _, v := range o.payloadSearch {
+			ors = append(ors, goqu.I("payload").Like("%"+v+"%"))
+		}
+		conds = append(conds, goqu.Or(ors...))
+	}
+
+	if len(o.payloadSearchNot) > 0 {
+		for _, v := range o.payloadSearchNot {
+			conds = append(conds, goqu.I("payload").NotLike("%"+v+"%"))
+		}
+	}
+
+	if len(conds) == 0 {
+		return q
+	}
+	return q.Where(goqu.And(conds...))
+}
+
+// applyPagination applies limit/offset when not count-only.
+func (o *recordQueryImplementation) applyPagination(q *goqu.SelectDataset) *goqu.SelectDataset {
+	if o.IsOffsetSet() && !o.IsLimitSet() {
+		o.SetLimit(10) // offset requires limit
+	}
+	if o.IsCountOnly() {
+		return q
+	}
+	if o.IsLimitSet() {
+		q = q.Limit(uint(o.GetLimit()))
+	}
+	if o.IsOffsetSet() {
+		q = q.Offset(uint(o.GetOffset()))
+	}
+	return q
+}
+
+// applyOrderBy applies ordering if set.
+func (o *recordQueryImplementation) applyOrderBy(q *goqu.SelectDataset, defaultOrder string) *goqu.SelectDataset {
+	if !o.IsOrderBySet() {
+		return q
+	}
+	if strings.EqualFold(defaultOrder, sb.ASC) {
+		return q.Order(goqu.I(o.GetOrderBy()).Asc())
+	}
+	return q.Order(goqu.I(o.GetOrderBy()).Desc())
+}
+
+// selectedColumns returns any requested columns.
+func (o *recordQueryImplementation) selectedColumns() []any {
+	cols := []any{}
+	for _, c := range o.GetColumns() {
+		cols = append(cols, c)
+	}
+	return cols
+}
+
+// softDeletedExpr builds the soft-deleted filter expression.
+func (o *recordQueryImplementation) softDeletedExpr() goqu.Expression {
+	return goqu.C(COLUMN_SOFT_DELETED_AT).
+		Gt(carbon.Now(carbon.UTC).ToDateTimeString())
 }
 
 func (o *recordQueryImplementation) SetColumns(columns []string) RecordQueryInterface {
