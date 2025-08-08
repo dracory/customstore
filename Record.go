@@ -108,7 +108,11 @@ func (o *recordImplementation) Metas() (map[string]string, error) {
 		return map[string]string{}, err
 	}
 
-	return cast.ToStringMapString(metas), nil
+	result := cast.ToStringMapString(metas)
+	if result == nil {
+		result = map[string]string{}
+	}
+	return result, nil
 }
 
 func (o *recordImplementation) Meta(name string) string {
