@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/dracory/database"
 	"github.com/dromara/carbon/v2"
-	"github.com/gouniverse/base/database"
 	"github.com/gouniverse/sb"
 	"github.com/samber/lo"
 )

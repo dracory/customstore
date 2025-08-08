@@ -1,11 +1,10 @@
 module github.com/dracory/customstore
 
-go 1.23.3
+go 1.24.5
 
 require (
 	github.com/doug-martin/goqu/v9 v9.19.0
 	github.com/dromara/carbon/v2 v2.6.11
-	github.com/gouniverse/base v0.9.0
 	github.com/gouniverse/dataobject v1.3.0
 	github.com/gouniverse/sb v0.9.0
 	github.com/gouniverse/uid v1.5.0
@@ -14,9 +13,12 @@ require (
 	github.com/spf13/cast v1.9.2
 )
 
+require github.com/dracory/database v0.2.0
+
 require (
 	github.com/georgysavva/scany v1.2.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gouniverse/base v0.8.1 // indirect
 	github.com/gouniverse/maputils v0.7.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/term v0.34.0 // indirect
