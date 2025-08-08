@@ -22,7 +22,7 @@ type recordImplementation struct {
 // == CONSTRUCTORS
 // ============================================================================
 
-func NewRecord(recordType string) RecordInterface {
+func NewRecord(recordType string, opts ...RecordOption) RecordInterface {
 	record := recordImplementation{}
 	record.SetID(uid.HumanUid())
 	record.SetType(recordType)
@@ -32,6 +32,12 @@ func NewRecord(recordType string) RecordInterface {
 	record.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString())
 	record.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString())
 	record.SetSoftDeletedAt(sb.MAX_DATETIME)
+
+	// Apply functional options, ignore errors to keep constructor signature simple
+	for _, opt := range opts {
+		_ = opt(&record)
+	}
+
 	return &record
 }
 

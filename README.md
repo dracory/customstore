@@ -1,10 +1,12 @@
-# customstore <a href="https://gitpod.io/#https://github.com/gouniverse/customstore" style="float:right;"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
+# customstore <a href="https://gitpod.io/#https://github.com/dracory/customstore" style="float:right;"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
 
-[![Tests Status](https://github.com/gouniverse/customstore/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/gouniverse/customstore/actions/workflows/tests.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gouniverse/customstore)](https://goreportcard.com/report/github.com/gouniverse/customstore)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/gouniverse/customstore)](https://pkg.go.dev/github.com/gouniverse/customstore)
+[![Tests Status](https://github.com/dracory/customstore/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/customstore/actions/workflows/tests.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dracory/customstore)](https://goreportcard.com/report/github.com/dracory/customstore)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/customstore)](https://pkg.go.dev/github.com/dracory/customstore)
 
-**customstore** is a Go package that provides a flexible way to store and manage custom records in a database table. It simplifies common database operations like creating, retrieving, updating, and deleting records.
+**customstore** is a Go package that provides a flexible way to store and manage
+custom records in a database table. It simplifies common database operations like
+creating, retrieving, updating, and deleting records.
 
 ## Features
 
@@ -20,7 +22,7 @@
 ## Installation
 
 ```bash
-go get -u github.com/gouniverse/customstore
+go get -u github.com/dracory/customstore
 ```
 
 ## Setup
@@ -85,15 +87,51 @@ The RecordQuery struct allows you to build complex queries to filter and retriev
 
 ### Creating a Record
 
+You can now pass functional options to the constructor to initialize fields in one place.
+
+```go
+record := customstore.NewRecord(
+    "person",
+    customstore.WithID("person-123"),
+    customstore.WithMemo("seed user"),
+    customstore.WithPayloadMap(map[string]any{
+        "name": "John Doe",
+        "age":  30,
+    }),
+    customstore.WithMetas(map[string]string{
+        "role": "admin",
+    }),
+)
+
+if err := store.RecordCreate(record); err != nil {
+    panic(err)
+}
+```
+
+Or set a raw JSON payload string at construction time:
+
+```go
+record := customstore.NewRecord(
+    "order",
+    customstore.WithPayload(`{"id":1,"total":19.99}`),
+)
+```
+
+Legacy/imperative style (still supported):
+
 ```go
 record := customstore.NewRecord("person")
-record.SetPayloadMap(map[string]interface{}{
+record.SetID("person-123")            // optional, auto-generated if not set
+record.SetMemo("seed user")            // optional memo
+record.SetPayloadMap(map[string]any{   // or use SetPayload with a JSON string
     "name": "John Doe",
     "age":  30,
 })
+record.SetMetas(map[string]string{
+    "role": "admin",
+})
 
-err := store.RecordCreate(record)
-if err != nil {
+if err := store.RecordCreate(record); err != nil {
     panic(err)
 }
 ```
