@@ -174,14 +174,14 @@ func (o *recordQueryImplementation) ToSelectDataset(driver string, table string)
 	if len(o.payloadSearch) > 0 {
 		orConditions := []goqu.Expression{}
 		for _, value := range o.payloadSearch {
-			orConditions = append(orConditions, goqu.I("payload").Like("%" + value + "%"))
+			orConditions = append(orConditions, goqu.I("payload").Like("%"+value+"%"))
 		}
 		conditions = append(conditions, goqu.Or(orConditions...))
 	}
 
 	if len(o.payloadSearchNot) > 0 {
 		for _, value := range o.payloadSearchNot {
-			conditions = append(conditions, goqu.I("payload").NotLike("%" + value + "%"))
+			conditions = append(conditions, goqu.I("payload").NotLike("%"+value+"%"))
 		}
 	}
 
