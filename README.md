@@ -17,6 +17,63 @@ creating, retrieving, updating, and deleting records.
 - **Flexible Queries**: Query records based on various criteria
 - **Soft Deletes**: Option to soft delete records instead of permanent deletion
 - **Payload Search**: Search for records based on content within the payload
+
+## What's New
+
+- Multi-ID queries via `SetIDList([]string)`: efficiently fetch multiple records in a single `RecordList` call.
+
+## Quick Start
+
+```go
+import (
+    "database/sql"
+    "github.com/dracory/customstore"
+)
+
+func example(db *sql.DB) error {
+    store, err := customstore.NewStore(customstore.NewOptions().
+        SetDB(db).
+        SetTableName("custom_records").
+        SetAutomigrateEnabled(true))
+    if err != nil { return err }
+
+    // List records by multiple IDs and type
+    ids := []string{"rec_1", "rec_2", "rec_3"}
+    recs, err := store.RecordList(
+        customstore.NewRecordQuery().
+            SetType("analysis_report").
+            SetIDList(ids),
+    )
+    if err != nil { return err }
+
+    for _, r := range recs {
+        // use r.ID(), r.Type(), r.Payload(), ...
+    }
+    return nil
+}
+```
+
+## RecordQuery Cheatsheet
+
+- Filtering
+  - `SetID(id string)`
+  - `SetIDList(ids []string)`
+  - `SetType(recordType string)`
+  - Payload contains: `AddPayloadSearch("needle")`
+  - Payload not contains: `AddPayloadSearchNot("needle")`
+
+- Pagination and order
+  - `SetLimit(n)`, `SetOffset(n)`
+  - `SetOrderBy(column)` (default order is descending)
+
+- Soft delete
+  - Excluded by default
+  - Include via: `SetSoftDeletedIncluded(true)`
+
+## Notes
+
+- `RecordList` returns only non-soft-deleted records by default.
+- `SetIDList` ignores empty strings; providing an empty slice is treated as no-op (no filter).
 - **Debug Mode**: Enable debug mode for detailed logging
 - **Schema-less Payloads**: Store any JSON structure without altering DB schema
 - **Document-store Feel on SQL**: Document flexibility with SQL power and tooling
