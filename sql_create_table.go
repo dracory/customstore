@@ -1,6 +1,6 @@
 package customstore
 
-import "github.com/gouniverse/sb"
+import "github.com/dracory/sb"
 
 // SqlCreateUserTable returns a SQL string for creating the user table
 func (store *storeImplementation) SqlCreateTable() string {

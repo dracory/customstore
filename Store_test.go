@@ -8,10 +8,9 @@ import (
 	"testing"
 	"time"
 
-	// Import the package we are testing
-	"github.com/dracory/customstore" // Added import for the package itself
+	"github.com/dracory/customstore"
 
-	"github.com/gouniverse/uid"
+	"github.com/dracory/uid"
 	_ "github.com/mattn/go-sqlite3"
 )
 

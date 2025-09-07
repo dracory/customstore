@@ -1,8 +1,8 @@
 package customstore
 
 import (
+	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
-	"github.com/gouniverse/dataobject"
 )
 
 // RecordInterface represents an record for accessing the API

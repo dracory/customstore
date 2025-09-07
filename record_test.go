@@ -7,12 +7,10 @@ import (
 	"testing"
 	"time"
 
-	// Import the package we are testing
-	// Note: Replace "github.com/your-org/customstore" with your actual module path
 	"github.com/dracory/customstore"
 
+	"github.com/dracory/sb"
 	"github.com/dromara/carbon/v2"
-	"github.com/gouniverse/sb"
 )
 
 func TestNewRecord(t *testing.T) {
