@@ -11,14 +11,14 @@ import (
 	"github.com/dracory/customstore"
 
 	"github.com/dracory/uid"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // InitDB remains a helper function within the test package
 func InitDB(filepath string) *sql.DB {
 	os.Remove(filepath) // remove database
 	dsn := filepath + "?parseTime=true"
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite", dsn)
 
 	if err != nil {
 		panic(err) // Panic is acceptable in test setup helpers
