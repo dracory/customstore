@@ -3,8 +3,8 @@ package customstore
 import "github.com/dracory/sb"
 
 // SqlCreateUserTable returns a SQL string for creating the user table
-func (store *storeImplementation) SqlCreateTable() string {
-	sql := sb.NewBuilder(sb.DatabaseDriverName(store.db)).
+func (store *storeImplementation) SqlCreateTable() (string, error) {
+	sql, err := sb.NewBuilder(sb.DatabaseDriverName(store.db)).
 		Table(store.tableName).
 		Column(sb.Column{
 			Name:       COLUMN_ID,
@@ -44,5 +44,9 @@ func (store *storeImplementation) SqlCreateTable() string {
 		}).
 		CreateIfNotExists()
 
-	return sql
+	if err != nil {
+		return "", err
+	}
+
+	return sql, nil
 }

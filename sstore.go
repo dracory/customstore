@@ -85,13 +85,16 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 
 // AutoMigrate migrates the tables
 func (st *storeImplementation) AutoMigrate() error {
-	sql := st.SqlCreateTable()
+	sql, err := st.SqlCreateTable()
+	if err != nil {
+		return err
+	}
 
 	if st.debugEnabled {
 		log.Println(sql)
 	}
 
-	_, err := st.db.Exec(sql)
+	_, err = st.db.Exec(sql)
 	if err != nil {
 		return err
 	}
