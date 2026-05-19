@@ -1,6 +1,8 @@
 package customstore
 
-import "github.com/dracory/sb"
+import (
+	"github.com/dracory/sb"
+)
 
 // SqlCreateUserTable returns a SQL string for creating the user table
 func (store *storeImplementation) SqlCreateTable() (string, error) {
@@ -48,5 +50,16 @@ func (store *storeImplementation) SqlCreateTable() (string, error) {
 		return "", err
 	}
 
+	return sql, nil
+}
+
+// SqlDropTable returns a SQL string for dropping the table
+func (store *storeImplementation) SqlDropTable() (string, error) {
+	sql, err := sb.NewBuilder(sb.DatabaseDriverName(store.db)).
+		Table(store.tableName).
+		Drop()
+	if err != nil {
+		return "", err
+	}
 	return sql, nil
 }

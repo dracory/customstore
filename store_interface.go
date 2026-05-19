@@ -1,10 +1,18 @@
 package customstore
 
+import (
+	"context"
+	"database/sql"
+)
+
 // StoreInterface defines a custom store
 
 type StoreInterface interface {
-	// AutoMigrate migrates the tables
-	AutoMigrate() error
+	// MigrateDown drops the table
+	MigrateDown(ctx context.Context, tx ...*sql.Tx) error
+
+	// MigrateUp creates the table
+	MigrateUp(ctx context.Context, tx ...*sql.Tx) error
 
 	// EnableDebug - enables the debug option
 	EnableDebug(debug bool)
