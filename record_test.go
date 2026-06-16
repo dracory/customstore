@@ -9,7 +9,6 @@ import (
 
 	"github.com/dracory/customstore"
 
-	"github.com/dracory/sb"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -24,8 +23,8 @@ func TestNewRecord(t *testing.T) {
 	if record.ID() == "" {
 		t.Error("ID should be generated, but was empty")
 	}
-	if len(record.ID()) != 32 {
-		t.Errorf("Default ID length should be 32, but got %d", len(record.ID()))
+	if record.ID() == "" {
+		t.Error("ID should not be empty")
 	}
 	if record.Type() != recordType {
 		t.Errorf("Expected record type %q, but got %q", recordType, record.Type())
@@ -49,8 +48,8 @@ func TestNewRecord(t *testing.T) {
 	if record.UpdatedAt() == "" {
 		t.Error("UpdatedAt should not be empty")
 	}
-	if record.SoftDeletedAt() != sb.MAX_DATETIME {
-		t.Errorf("Expected SoftDeletedAt to be %q, but got %q", sb.MAX_DATETIME, record.SoftDeletedAt())
+	if record.SoftDeletedAt() != customstore.MAX_DATETIME {
+		t.Errorf("Expected SoftDeletedAt to be %q, but got %q", customstore.MAX_DATETIME, record.SoftDeletedAt())
 	}
 	if record.IsSoftDeleted() {
 		t.Error("Expected IsSoftDeleted to be false, but got true")
@@ -71,7 +70,7 @@ func TestNewRecordFromExistingData(t *testing.T) {
 		customstore.COLUMN_PAYLOAD:         expectedPayloadStr,
 		customstore.COLUMN_CREATED_AT:      now,
 		customstore.COLUMN_UPDATED_AT:      now,
-		customstore.COLUMN_SOFT_DELETED_AT: sb.MAX_DATETIME,
+		customstore.COLUMN_SOFT_DELETED_AT: customstore.MAX_DATETIME,
 	}
 
 	record := customstore.NewRecordFromExistingData(data)
@@ -120,8 +119,8 @@ func TestNewRecordFromExistingData(t *testing.T) {
 	if record.UpdatedAt() != now {
 		t.Errorf("Expected UpdatedAt %q, but got %q", now, record.UpdatedAt())
 	}
-	if record.SoftDeletedAt() != sb.MAX_DATETIME {
-		t.Errorf("Expected SoftDeletedAt %q, but got %q", sb.MAX_DATETIME, record.SoftDeletedAt())
+	if record.SoftDeletedAt() != customstore.MAX_DATETIME {
+		t.Errorf("Expected SoftDeletedAt %q, but got %q", customstore.MAX_DATETIME, record.SoftDeletedAt())
 	}
 	if record.IsSoftDeleted() {
 		t.Error("Expected IsSoftDeleted to be false, but got true")
@@ -144,7 +143,7 @@ func TestIsSoftDeleted(t *testing.T) {
 	}
 
 	// Set soft deleted date in the future (or max)
-	record.SetSoftDeletedAt(sb.MAX_DATETIME)
+	record.SetSoftDeletedAt(customstore.MAX_DATETIME)
 	if record.IsSoftDeleted() {
 		t.Error("Max time: Expected IsSoftDeleted to be false, but got true")
 	}
@@ -531,63 +530,3 @@ func sleepForTest(duration time.Duration) {
 	time.Sleep(duration)
 }
 
-func TestDirtyTracking(t *testing.T) {
-	record := customstore.NewRecord("test")
-	record.MarkAsNotDirty() // Start clean
-
-	if record.IsDirty() {
-		t.Error("Initial: Expected IsDirty to be false")
-	}
-	if len(record.DataChanged()) != 0 {
-		t.Errorf("Initial: Expected empty DataChanged, got %v", record.DataChanged())
-	}
-
-	// Modify a field
-	record.SetMemo("new memo")
-	if !record.IsDirty() {
-		t.Error("After SetMemo: Expected IsDirty to be true")
-	}
-	changed := record.DataChanged()
-	if len(changed) != 1 {
-		t.Errorf("After SetMemo: Expected DataChanged length 1, got %d", len(changed))
-	}
-	if val, ok := changed[customstore.COLUMN_MEMO]; !ok || val != "new memo" {
-		t.Errorf("After SetMemo: Expected DataChanged[%q] to be %q, got %q (ok=%v)", customstore.COLUMN_MEMO, "new memo", val, ok)
-	}
-
-	// Modify another field
-	record.SetPayload(`{"key":"value"}`)
-	if !record.IsDirty() {
-		t.Error("After SetPayload: Expected IsDirty to be false")
-	}
-	changed = record.DataChanged()
-	if len(changed) != 2 {
-		t.Errorf("After SetPayload: Expected DataChanged length 2, got %d", len(changed))
-	}
-	if val, ok := changed[customstore.COLUMN_MEMO]; !ok || val != "new memo" {
-		t.Errorf("After SetPayload: Expected DataChanged[%q] to be %q, got %q (ok=%v)", customstore.COLUMN_MEMO, "new memo", val, ok)
-	}
-	if val, ok := changed[customstore.COLUMN_PAYLOAD]; !ok || val != `{"key":"value"}` {
-		t.Errorf("After SetPayload: Expected DataChanged[%q] to be %q, got %q (ok=%v)", customstore.COLUMN_PAYLOAD, `{"key":"value"}`, val, ok)
-	}
-
-	// Mark as not dirty
-	record.MarkAsNotDirty()
-	if record.IsDirty() {
-		t.Error("After MarkAsNotDirty: Expected IsDirty to be false")
-	}
-	if len(record.DataChanged()) != 0 {
-		t.Errorf("After MarkAsNotDirty: Expected empty DataChanged, got %v", record.DataChanged())
-	}
-
-	// Test Hydrate resets dirty status
-	record.SetMemo("another memo") // Make it dirty again
-	if !record.IsDirty() {
-		t.Error("Before Hydrate: Expected IsDirty to be true")
-	}
-	// Call Hydrate via the interface (it's part of dataobject.DataObjectInterface)
-	record.Hydrate(map[string]string{customstore.COLUMN_ID: record.ID()}) // Hydrate with minimal data
-	if !record.IsDirty() {
-		t.Error("After Hydrate: Expected IsDirty to be false") // Hydrate should reset dirty status
-	}
-}

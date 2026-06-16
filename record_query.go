@@ -1,14 +1,65 @@
 package customstore
 
-import (
-	"errors"
-	"strings"
+import "errors"
 
-	"github.com/doug-martin/goqu/v9"
-	"github.com/dracory/sb"
-	"github.com/dromara/carbon/v2"
-	"github.com/samber/lo"
-)
+// ============================================================================
+// == INTERFACE
+// ============================================================================
+
+// RecordQueryInterface defines the interface for API record query operations
+type RecordQueryInterface interface {
+	Validate() error
+
+	IsSoftDeletedIncluded() bool
+	SetSoftDeletedIncluded(softDeletedIncluded bool) RecordQueryInterface
+
+	SetColumns(columns []string) RecordQueryInterface
+	GetColumns() []string
+
+	IsCountOnly() bool
+	SetCountOnly(countOnly bool) RecordQueryInterface
+
+	IsIDSet() bool
+	GetID() string
+	SetID(id string) RecordQueryInterface
+
+	// Multiple IDs support
+	IsIDListSet() bool
+	GetIDList() []string
+	SetIDList(ids []string) RecordQueryInterface
+
+	IsTypeSet() bool
+	GetType() string
+	SetType(recordType string) RecordQueryInterface
+
+	IsLimitSet() bool
+	GetLimit() int
+	SetLimit(limit int) RecordQueryInterface
+
+	IsOffsetSet() bool
+	GetOffset() int
+	SetOffset(offset int) RecordQueryInterface
+
+	IsOrderBySet() bool
+	GetOrderBy() string
+	SetOrderBy(orderBy string) RecordQueryInterface
+
+	// Payload search methods
+	AddPayloadSearch(needle string) RecordQueryInterface
+	GetPayloadSearch() []string
+	AddPayloadSearchNot(needle string) RecordQueryInterface
+	GetPayloadSearchNot() []string
+}
+
+// ============================================================================
+// == TYPE
+// ============================================================================
+
+var _ RecordQueryInterface = (*recordQueryImplementation)(nil)
+
+// ============================================================================
+// == CONSTRUCTORS
+// ============================================================================
 
 // RecordQuery shortcut for NewRecordQuery
 func RecordQuery() RecordQueryInterface {
@@ -17,338 +68,222 @@ func RecordQuery() RecordQueryInterface {
 
 func NewRecordQuery() RecordQueryInterface {
 	return &recordQueryImplementation{
-		hasID:                 false,
-		hasIDList:             false,
-		isSoftDeletedIncluded: false,
-		columns:               []string{},
-		isCountOnly:           false,
-		isLimitSet:            false,
-		isOffsetSet:           false,
-		isOrderBySet:          false,
-		payloadSearch:         nil,
-		payloadSearchNot:      nil,
+		properties: make(map[string]interface{}),
 	}
 }
 
+// ============================================================================
+// == CLASS
+// ============================================================================
+
 type recordQueryImplementation struct {
-	// hasID is true if the ID is set, false otherwise
-	hasID bool
-
-	// id is the ID of the API record
-	id string
-
-	// hasIDList is true if an ID list is set
-	hasIDList bool
-
-	// idList contains multiple IDs to match
-	idList []string
-
-	// isTypeSet is true if the record type is set, false otherwise
-	isTypeSet bool
-
-	// recordType is the record type of the API record
-	recordType string
-
-	// columns is the list of columns to select
-	columns []string
-
-	// isCountOnly is true if the query is for counting, false otherwise
-	isCountOnly bool
-
-	// isSoftDeletedIncluded is true if soft deleted records should be included, false otherwise
-	isSoftDeletedIncluded bool
-
-	isLimitSet bool
-
-	// limit is the limit of the API record
-	limit int
-
-	isOffsetSet bool
-
-	// offset is the offset of the API record
-	offset int
-
-	// isOrderBySet is true if the order by is set, false otherwise
-	isOrderBySet bool
-
-	// orderBy is the order by of the API record
-	orderBy string
-
-	// payloadSearch is the list of strings to search for in the payload
-	payloadSearch []string
-
-	// payloadSearchNot is the list of strings that should NOT be in the payload
-	payloadSearchNot []string
+	properties map[string]interface{}
 }
+
+// ============================================================================
+// == METHODS
+// ============================================================================
 
 func (o *recordQueryImplementation) Validate() error {
 	if o.IsIDSet() && o.GetID() == "" {
-		return errors.New("id is required")
+		return errors.New("record query: id cannot be empty")
 	}
-
 	if o.IsIDListSet() && len(o.GetIDList()) == 0 {
-		return errors.New("id list is required")
+		return errors.New("record query: id list cannot be empty")
 	}
-
-	// sanitize empty strings out of the list
-	filtered := lo.Filter(o.GetIDList(), func(id string, _ int) bool {
-		return strings.TrimSpace(id) != ""
-	})
-	if o.IsIDListSet() && len(filtered) != len(o.GetIDList()) {
-		return errors.New("id list contains empty strings")
-	}
-
 	if o.IsTypeSet() && o.GetType() == "" {
-		return errors.New("type is required")
+		return errors.New("record query: type cannot be empty")
 	}
-
+	if o.IsLimitSet() && o.GetLimit() < 0 {
+		return errors.New("record query: limit cannot be negative")
+	}
+	if o.IsOffsetSet() && o.GetOffset() < 0 {
+		return errors.New("record query: offset cannot be negative")
+	}
 	return nil
 }
 
-func (o *recordQueryImplementation) ToSelectDataset(driver string, table string) (selectDataset *goqu.SelectDataset, columns []any, err error) {
-	if err := o.Validate(); err != nil {
-		return nil, []any{}, err
-	}
-
-	q := goqu.Dialect(driver).From(table)
-
-	if o.IsSoftDeletedIncluded() {
-		return q, []any{}, nil // soft deleted sites requested specifically
-	}
-
-	// Basic filters
-	if o.IsIDSet() {
-		q = q.Where(goqu.C(COLUMN_ID).Eq(o.GetID()))
-	}
-	if o.IsIDListSet() {
-		// sanitize empty strings out of the list
-		ids := []string{}
-		for _, v := range o.GetIDList() {
-			if strings.TrimSpace(v) != "" {
-				ids = append(ids, v)
-			}
-		}
-		if len(ids) > 0 {
-			q = q.Where(goqu.C(COLUMN_ID).In(ids))
-		}
-	}
-
-	// Payload conditions
-	q = o.applyPayloadWhere(q)
-
-	// Pagination and ordering
-	q = o.applyPagination(q)
-	q = o.applyOrderBy(q, sb.DESC)
-
-	// Selected columns
-	columns = o.selectedColumns()
-
-	// Soft-delete and type constraints
-	if o.IsTypeSet() {
-		q = q.Where(goqu.C(COLUMN_RECORD_TYPE).Eq(o.GetType()))
-	}
-	return q.Where(o.softDeletedExpr()), columns, nil
+func (o *recordQueryImplementation) hasProperty(key string) bool {
+	_, ok := o.properties[key]
+	return ok
 }
 
-// applyPayloadWhere applies payload include/exclude conditions.
-func (o *recordQueryImplementation) applyPayloadWhere(q *goqu.SelectDataset) *goqu.SelectDataset {
-	conds := []goqu.Expression{}
-
-	if len(o.payloadSearch) > 0 {
-		ors := make([]goqu.Expression, 0, len(o.payloadSearch))
-		for _, v := range o.payloadSearch {
-			ors = append(ors, goqu.I("payload").Like("%"+v+"%"))
-		}
-		conds = append(conds, goqu.Or(ors...))
-	}
-
-	if len(o.payloadSearchNot) > 0 {
-		for _, v := range o.payloadSearchNot {
-			conds = append(conds, goqu.I("payload").NotLike("%"+v+"%"))
-		}
-	}
-
-	if len(conds) == 0 {
-		return q
-	}
-	return q.Where(goqu.And(conds...))
-}
-
-// applyPagination applies limit/offset when not count-only.
-func (o *recordQueryImplementation) applyPagination(q *goqu.SelectDataset) *goqu.SelectDataset {
-	if o.IsOffsetSet() && !o.IsLimitSet() {
-		o.SetLimit(10) // offset requires limit
-	}
-	if o.IsCountOnly() {
-		return q
-	}
-	if o.IsLimitSet() {
-		q = q.Limit(uint(o.GetLimit()))
-	}
-	if o.IsOffsetSet() {
-		q = q.Offset(uint(o.GetOffset()))
-	}
-	return q
-}
-
-// applyOrderBy applies ordering if set.
-func (o *recordQueryImplementation) applyOrderBy(q *goqu.SelectDataset, defaultOrder string) *goqu.SelectDataset {
-	if !o.IsOrderBySet() {
-		return q
-	}
-	if strings.EqualFold(defaultOrder, sb.ASC) {
-		return q.Order(goqu.I(o.GetOrderBy()).Asc())
-	}
-	return q.Order(goqu.I(o.GetOrderBy()).Desc())
-}
-
-// selectedColumns returns any requested columns.
-func (o *recordQueryImplementation) selectedColumns() []any {
-	cols := []any{}
-	for _, c := range o.GetColumns() {
-		cols = append(cols, c)
-	}
-	return cols
-}
-
-// softDeletedExpr builds the soft-deleted filter expression.
-func (o *recordQueryImplementation) softDeletedExpr() goqu.Expression {
-	return goqu.C(COLUMN_SOFT_DELETED_AT).
-		Gt(carbon.Now(carbon.UTC).ToDateTimeString())
-}
+// == COLUMNS ==
 
 func (o *recordQueryImplementation) SetColumns(columns []string) RecordQueryInterface {
-	o.columns = columns
+	o.properties["columns"] = columns
 	return o
 }
 
 func (o *recordQueryImplementation) GetColumns() []string {
-	return o.columns
+	if v, ok := o.properties["columns"].([]string); ok {
+		return v
+	}
+	return []string{}
 }
 
+// == COUNT ONLY ==
+
 func (o *recordQueryImplementation) IsCountOnly() bool {
-	return o.isCountOnly
+	return o.hasProperty("count_only")
 }
 
 func (o *recordQueryImplementation) SetCountOnly(countOnly bool) RecordQueryInterface {
-	o.isCountOnly = countOnly
+	o.properties["count_only"] = countOnly
 	return o
 }
 
+// == ID ==
+
 func (o *recordQueryImplementation) IsIDSet() bool {
-	return o.hasID
+	return o.hasProperty("id")
 }
 
 func (o *recordQueryImplementation) GetID() string {
-	return o.id
+	return o.properties["id"].(string)
 }
 
 func (o *recordQueryImplementation) SetID(id string) RecordQueryInterface {
 	if id == "" {
-		o.hasID = false
+		delete(o.properties, "id")
 	} else {
-		o.hasID = true
+		o.properties["id"] = id
 	}
-
-	o.id = id
-
 	return o
 }
 
-// == ID LIST API ==
-func (o *recordQueryImplementation) IsIDListSet() bool   { return o.hasIDList }
-func (o *recordQueryImplementation) GetIDList() []string { return o.idList }
+// == ID LIST ==
+
+func (o *recordQueryImplementation) IsIDListSet() bool {
+	return o.hasProperty("id_list")
+}
+
+func (o *recordQueryImplementation) GetIDList() []string {
+	return o.properties["id_list"].([]string)
+}
+
 func (o *recordQueryImplementation) SetIDList(ids []string) RecordQueryInterface {
-	o.hasIDList = true
-	o.idList = ids
+	o.properties["id_list"] = ids
 	return o
 }
 
-func (o *recordQueryImplementation) IsSoftDeletedIncluded() bool {
-	return o.isSoftDeletedIncluded
-}
-
-func (o *recordQueryImplementation) SetSoftDeletedIncluded(softDeletedIncluded bool) RecordQueryInterface {
-	o.isSoftDeletedIncluded = softDeletedIncluded
-	return o
-}
-
-func (o *recordQueryImplementation) IsLimitSet() bool {
-	return o.isLimitSet
-}
-
-func (o *recordQueryImplementation) GetLimit() int {
-	return o.limit
-}
-
-func (o *recordQueryImplementation) SetLimit(limit int) RecordQueryInterface {
-	o.isLimitSet = true
-	o.limit = limit
-	return o
-}
-
-func (o *recordQueryImplementation) IsOffsetSet() bool {
-	return o.isOffsetSet
-}
-
-func (o *recordQueryImplementation) GetOffset() int {
-	return o.offset
-}
-
-func (o *recordQueryImplementation) SetOffset(offset int) RecordQueryInterface {
-	o.isOffsetSet = true
-	o.offset = offset
-	return o
-}
-
-func (o *recordQueryImplementation) IsOrderBySet() bool {
-	return o.isOrderBySet
-}
-
-func (o *recordQueryImplementation) GetOrderBy() string {
-	return o.orderBy
-}
-
-func (o *recordQueryImplementation) SetOrderBy(orderBy string) RecordQueryInterface {
-	o.isOrderBySet = true
-	o.orderBy = orderBy
-	return o
-}
+// == TYPE ==
 
 func (o *recordQueryImplementation) IsTypeSet() bool {
-	return o.isTypeSet
+	return o.hasProperty("type")
 }
 
 func (o *recordQueryImplementation) GetType() string {
-	return o.recordType
+	return o.properties["type"].(string)
 }
 
 func (o *recordQueryImplementation) SetType(recordType string) RecordQueryInterface {
-	o.isTypeSet = true
-	o.recordType = recordType
+	if recordType == "" {
+		delete(o.properties, "type")
+	} else {
+		o.properties["type"] = recordType
+	}
 	return o
 }
 
-func (o *recordQueryImplementation) AddPayloadSearch(needle string) RecordQueryInterface {
-	if o.payloadSearch == nil {
-		o.payloadSearch = []string{}
+// == LIMIT ==
+
+func (o *recordQueryImplementation) IsLimitSet() bool {
+	return o.hasProperty("limit")
+}
+
+func (o *recordQueryImplementation) GetLimit() int {
+	return o.properties["limit"].(int)
+}
+
+func (o *recordQueryImplementation) SetLimit(limit int) RecordQueryInterface {
+	if limit < 0 {
+		delete(o.properties, "limit")
+	} else {
+		o.properties["limit"] = limit
 	}
-	o.payloadSearch = append(o.payloadSearch, needle)
+	return o
+}
+
+// == OFFSET ==
+
+func (o *recordQueryImplementation) IsOffsetSet() bool {
+	return o.hasProperty("offset")
+}
+
+func (o *recordQueryImplementation) GetOffset() int {
+	return o.properties["offset"].(int)
+}
+
+func (o *recordQueryImplementation) SetOffset(offset int) RecordQueryInterface {
+	if offset < 0 {
+		delete(o.properties, "offset")
+	} else {
+		o.properties["offset"] = offset
+	}
+	return o
+}
+
+// == ORDER BY ==
+
+func (o *recordQueryImplementation) IsOrderBySet() bool {
+	return o.hasProperty("order_by")
+}
+
+func (o *recordQueryImplementation) GetOrderBy() string {
+	return o.properties["order_by"].(string)
+}
+
+func (o *recordQueryImplementation) SetOrderBy(orderBy string) RecordQueryInterface {
+	if orderBy == "" {
+		delete(o.properties, "order_by")
+	} else {
+		o.properties["order_by"] = orderBy
+	}
+	return o
+}
+
+// == SOFT DELETED INCLUDED ==
+
+func (o *recordQueryImplementation) IsSoftDeletedIncluded() bool {
+	return o.hasProperty("soft_deleted_included")
+}
+
+func (o *recordQueryImplementation) SetSoftDeletedIncluded(softDeletedIncluded bool) RecordQueryInterface {
+	o.properties["soft_deleted_included"] = softDeletedIncluded
+	return o
+}
+
+// == PAYLOAD SEARCH ==
+
+func (o *recordQueryImplementation) AddPayloadSearch(needle string) RecordQueryInterface {
+	if !o.hasProperty("payload_search") {
+		o.properties["payload_search"] = []string{}
+	}
+	o.properties["payload_search"] = append(o.properties["payload_search"].([]string), needle)
 	return o
 }
 
 func (o *recordQueryImplementation) GetPayloadSearch() []string {
-	return o.payloadSearch
+	if v, ok := o.properties["payload_search"].([]string); ok {
+		return v
+	}
+	return []string{}
 }
 
+// == PAYLOAD SEARCH NOT ==
+
 func (o *recordQueryImplementation) AddPayloadSearchNot(needle string) RecordQueryInterface {
-	if o.payloadSearchNot == nil {
-		o.payloadSearchNot = []string{}
+	if !o.hasProperty("payload_search_not") {
+		o.properties["payload_search_not"] = []string{}
 	}
-	o.payloadSearchNot = append(o.payloadSearchNot, needle)
+	o.properties["payload_search_not"] = append(o.properties["payload_search_not"].([]string), needle)
 	return o
 }
 
 func (o *recordQueryImplementation) GetPayloadSearchNot() []string {
-	return o.payloadSearchNot
+	if v, ok := o.properties["payload_search_not"].([]string); ok {
+		return v
+	}
+	return []string{}
 }

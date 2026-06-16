@@ -3,19 +3,73 @@ package customstore
 import (
 	"encoding/json"
 
-	"github.com/dracory/dataobject"
-	"github.com/dracory/sb"
-	"github.com/dracory/uid"
+	"github.com/dracory/neat/database/orm"
+	"github.com/dracory/neat/database/soft_delete"
+	neatuid "github.com/dracory/neat/support/uid"
 	"github.com/dromara/carbon/v2"
 	"github.com/spf13/cast"
 )
 
 // ============================================================================
-// == CLASS
+// == INTERFACE
 // ============================================================================
 
+// RecordInterface represents an record for accessing the API
+type RecordInterface interface {
+	IsSoftDeleted() bool
+
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	SetCreatedAt(createdAt string)
+
+	ID() string
+	SetID(id string)
+
+	Type() string
+	SetType(t string)
+
+	Meta(name string) string
+	SetMeta(name, value string) error
+
+	Metas() (map[string]string, error)
+	SetMetas(metas map[string]string) error
+	UpsertMetas(metas map[string]string) error
+
+	Memo() string
+	SetMemo(memo string)
+
+	Payload() string
+	SetPayload(payload string)
+
+	PayloadMap() (map[string]any, error)
+	SetPayloadMap(payloadMap map[string]any) error
+	PayloadMapKey(key string) (any, error)
+	SetPayloadMapKey(key string, value any) error
+
+	SoftDeletedAt() string
+	SoftDeletedAtCarbon() *carbon.Carbon
+	SetSoftDeletedAt(softDeletedAt string)
+
+	UpdatedAt() string
+	UpdatedAtCarbon() *carbon.Carbon
+	SetUpdatedAt(updatedAt string)
+}
+
+// ============================================================================
+// == TYPE
+// ============================================================================
+
+var _ RecordInterface = (*recordImplementation)(nil)
+
 type recordImplementation struct {
-	dataobject.DataObject
+	IDField            string `db:"id"`
+	TypeField          string `db:"record_type"`
+	PayloadField       string `db:"payload"`
+	MetasField         string `db:"metas"`
+	MemoField          string `db:"memo"`
+	CreatedAtField     orm.CreatedAt
+	UpdatedAtField     orm.UpdatedAt
+	SoftDeletedAtField soft_delete.SoftDeletesMaxDate
 }
 
 // ============================================================================
@@ -23,27 +77,50 @@ type recordImplementation struct {
 // ============================================================================
 
 func NewRecord(recordType string, opts ...RecordOption) RecordInterface {
-	record := recordImplementation{}
-	record.SetID(uid.HumanUid())
+	record := &recordImplementation{}
+	record.SetID(neatuid.GenerateShortID())
 	record.SetType(recordType)
 	record.SetMemo("")
 	record.SetMetas(map[string]string{})
 	record.SetPayload("")
 	record.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString())
 	record.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString())
-	record.SetSoftDeletedAt(sb.MAX_DATETIME)
+	record.SetSoftDeletedAt(MAX_DATETIME)
 
 	// Apply functional options, ignore errors to keep constructor signature simple
 	for _, opt := range opts {
-		_ = opt(&record)
+		_ = opt(record)
 	}
 
-	return &record
+	return record
 }
 
 func NewRecordFromExistingData(data map[string]string) RecordInterface {
 	o := &recordImplementation{}
-	o.Hydrate(data)
+	if v, ok := data[COLUMN_ID]; ok {
+		o.SetID(v)
+	}
+	if v, ok := data[COLUMN_RECORD_TYPE]; ok {
+		o.SetType(v)
+	}
+	if v, ok := data[COLUMN_PAYLOAD]; ok {
+		o.SetPayload(v)
+	}
+	if v, ok := data[COLUMN_METAS]; ok {
+		o.SetMetasRaw(v)
+	}
+	if v, ok := data[COLUMN_MEMO]; ok {
+		o.SetMemo(v)
+	}
+	if v, ok := data[COLUMN_CREATED_AT]; ok {
+		o.SetCreatedAt(v)
+	}
+	if v, ok := data[COLUMN_UPDATED_AT]; ok {
+		o.SetUpdatedAt(v)
+	}
+	if v, ok := data[COLUMN_SOFT_DELETED_AT]; ok {
+		o.SetSoftDeletedAt(v)
+	}
 	return o
 }
 
@@ -52,7 +129,7 @@ func NewRecordFromExistingData(data map[string]string) RecordInterface {
 // ============================================================================
 
 func (o *recordImplementation) IsSoftDeleted() bool {
-	return o.SoftDeletedAtCarbon().IsPast()
+	return o.SoftDeletedAtField.SoftDeletedAt.Before(carbon.Now(carbon.UTC).StdTime())
 }
 
 // ============================================================================
@@ -60,43 +137,49 @@ func (o *recordImplementation) IsSoftDeleted() bool {
 // ============================================================================
 
 func (o *recordImplementation) CreatedAt() string {
-	return o.Get(COLUMN_CREATED_AT)
+	if o.CreatedAtField.CreatedAt.IsZero() {
+		return ""
+	}
+	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt).ToDateTimeString()
 }
 
 func (o *recordImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt)
 }
 
 func (o *recordImplementation) SetCreatedAt(createdAt string) {
-	o.Set(COLUMN_CREATED_AT, createdAt)
+	if createdAt == "" {
+		return
+	}
+	o.CreatedAtField.CreatedAt = carbon.Parse(createdAt, carbon.UTC).StdTime()
 }
 
 func (o *recordImplementation) Type() string {
-	return o.Get(COLUMN_RECORD_TYPE)
+	return o.TypeField
 }
 
 func (o *recordImplementation) SetType(recordType string) {
-	o.Set(COLUMN_RECORD_TYPE, recordType)
+	o.TypeField = recordType
 }
 
 func (o *recordImplementation) ID() string {
-	return o.Get(COLUMN_ID)
+	return o.IDField
 }
 
 func (o *recordImplementation) SetID(id string) {
-	o.Set(COLUMN_ID, id)
+	o.IDField = id
 }
 
 func (o *recordImplementation) Memo() string {
-	return o.Get(COLUMN_MEMO)
+	return o.MemoField
 }
 
 func (o *recordImplementation) SetMemo(memo string) {
-	o.Set(COLUMN_MEMO, memo)
+	o.MemoField = memo
 }
 
 func (o *recordImplementation) Metas() (map[string]string, error) {
-	metasStr := o.Get(COLUMN_METAS)
+	metasStr := o.MetasField
 
 	if metasStr == "" {
 		metasStr = "{}"
@@ -140,8 +223,13 @@ func (o *recordImplementation) SetMetas(metas map[string]string) error {
 	if err != nil {
 		return err
 	}
-	o.Set(COLUMN_METAS, string(mapString))
+	o.MetasField = string(mapString)
 	return nil
+}
+
+// SetMetasRaw sets the metas field directly from a raw JSON string
+func (o *recordImplementation) SetMetasRaw(metasStr string) {
+	o.MetasField = metasStr
 }
 
 func (o *recordImplementation) UpsertMetas(metas map[string]string) error {
@@ -159,11 +247,11 @@ func (o *recordImplementation) UpsertMetas(metas map[string]string) error {
 }
 
 func (o *recordImplementation) Payload() string {
-	return o.Get(COLUMN_PAYLOAD)
+	return o.PayloadField
 }
 
 func (o *recordImplementation) SetPayload(payload string) {
-	o.Set(COLUMN_PAYLOAD, payload)
+	o.PayloadField = payload
 }
 
 func (r *recordImplementation) PayloadMap() (map[string]any, error) {
@@ -218,25 +306,37 @@ func (record *recordImplementation) SetPayloadMapKey(key string, value any) erro
 }
 
 func (o *recordImplementation) SoftDeletedAt() string {
-	return o.Get(COLUMN_SOFT_DELETED_AT)
+	if o.SoftDeletedAtField.SoftDeletedAt.IsZero() {
+		return ""
+	}
+	return carbon.CreateFromStdTime(o.SoftDeletedAtField.SoftDeletedAt).ToDateTimeString()
 }
 
 func (o *recordImplementation) SoftDeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.SoftDeletedAt(), carbon.UTC)
+	return carbon.CreateFromStdTime(o.SoftDeletedAtField.SoftDeletedAt)
 }
 
 func (o *recordImplementation) SetSoftDeletedAt(softDeletedAt string) {
-	o.Set(COLUMN_SOFT_DELETED_AT, softDeletedAt)
+	if softDeletedAt == "" {
+		return
+	}
+	o.SoftDeletedAtField.SoftDeletedAt = carbon.Parse(softDeletedAt, carbon.UTC).StdTime()
 }
 
 func (o *recordImplementation) UpdatedAt() string {
-	return o.Get(COLUMN_UPDATED_AT)
+	if o.UpdatedAtField.UpdatedAt.IsZero() {
+		return ""
+	}
+	return carbon.CreateFromStdTime(o.UpdatedAtField.UpdatedAt).ToDateTimeString()
 }
 
 func (o *recordImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+	return carbon.CreateFromStdTime(o.UpdatedAtField.UpdatedAt)
 }
 
 func (o *recordImplementation) SetUpdatedAt(updatedAt string) {
-	o.Set(COLUMN_UPDATED_AT, updatedAt)
+	if updatedAt == "" {
+		return
+	}
+	o.UpdatedAtField.UpdatedAt = carbon.Parse(updatedAt, carbon.UTC).StdTime()
 }

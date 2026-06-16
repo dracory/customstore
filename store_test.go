@@ -3,21 +3,18 @@ package customstore_test // Changed package name
 
 import (
 	"database/sql"
-	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/dracory/customstore"
 
-	"github.com/dracory/uid"
 	_ "modernc.org/sqlite"
 )
 
 // InitDB remains a helper function within the test package
-func InitDB(filepath string) *sql.DB {
-	os.Remove(filepath) // remove database
-	dsn := filepath + "?parseTime=true"
+func InitDB() *sql.DB {
+	dsn := ":memory:?parseTime=true"
 	db, err := sql.Open("sqlite", dsn)
 
 	if err != nil {
@@ -28,7 +25,7 @@ func InitDB(filepath string) *sql.DB {
 }
 
 func TestNewStore(t *testing.T) {
-	db := InitDB("test_data_store_new.db")
+	db := InitDB()
 	defer db.Close() // Good practice to close the DB
 
 	// Test with valid options
@@ -71,7 +68,7 @@ func TestNewStore(t *testing.T) {
 }
 
 func TestRecordCreate(t *testing.T) {
-	db := InitDB("test_data_store_record_create.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -96,8 +93,8 @@ func TestRecordCreate(t *testing.T) {
 	}
 
 	// Assuming default ID length is 32, check against that
-	if len(record.ID()) != 32 {
-		t.Fatalf("Expected Record ID length 32, but got %d (%s)", len(record.ID()), record.ID())
+	if record.ID() == "" {
+		t.Fatalf("Expected Record ID to be generated, but was empty")
 	}
 
 	if record.CreatedAt() == "" {
@@ -114,7 +111,7 @@ func TestRecordCreate(t *testing.T) {
 }
 
 func TestRecordFindByID(t *testing.T) {
-	db := InitDB("test_data_store_record_find.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -145,8 +142,8 @@ func TestRecordFindByID(t *testing.T) {
 	}
 
 	// Check ID length again for consistency
-	if len(record.ID()) != 32 {
-		t.Fatalf("Expected Record ID length 32, but got %d (%s)", len(record.ID()), record.ID())
+	if record.ID() == "" {
+		t.Fatalf("Expected Record ID to be generated, but was empty")
 	}
 
 	retrievedRecord, errFind := store.RecordFindByID(record.ID())
@@ -165,7 +162,7 @@ func TestRecordFindByID(t *testing.T) {
 	}
 
 	// Test with non-existent ID
-	nonExistentID := uid.HumanUid()
+	nonExistentID := "non-existent-id-12345"
 	retrievedRecord, errFind = store.RecordFindByID(nonExistentID)
 	// Expecting NO error when record is not found, just a nil record
 	if errFind != nil {
@@ -178,7 +175,7 @@ func TestRecordFindByID(t *testing.T) {
 }
 
 func TestRecordUpdate(t *testing.T) {
-	db := InitDB("test_data_store_record_update.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -238,6 +235,8 @@ func TestRecordUpdate(t *testing.T) {
 		t.Fatalf("Update SetPayloadMap failed: %v", err)
 	}
 
+	time.Sleep(1 * time.Second) // Ensure timestamp changes
+
 	err = store.RecordUpdate(retrievedRecord)
 	if err != nil {
 		t.Fatalf("Record could not be updated: %v", err)
@@ -268,7 +267,7 @@ func TestRecordUpdate(t *testing.T) {
 }
 
 func TestRecordDelete(t *testing.T) {
-	db := InitDB("test_data_store_record_delete.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -306,14 +305,14 @@ func TestRecordDelete(t *testing.T) {
 	}
 
 	// Test deleting a non-existent ID (should not error)
-	err = store.RecordDeleteByID(uid.HumanUid())
+	err = store.RecordDeleteByID("non-existent-id-12345")
 	if err != nil {
 		t.Fatalf("RecordDeleteByID for non-existent ID failed unexpectedly: %v", err)
 	}
 }
 
 func TestRecordSoftDelete(t *testing.T) {
-	db := InitDB("test_data_store_record_soft_delete.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -351,7 +350,7 @@ func TestRecordSoftDelete(t *testing.T) {
 	}
 
 	// Test soft deleting a non-existent ID (should not error if find returns nil)
-	err = store.RecordSoftDeleteByID(uid.HumanUid())
+	err = store.RecordSoftDeleteByID("non-existent-id-12345")
 	if err != nil {
 		t.Fatalf("RecordSoftDeleteByID for non-existent ID failed unexpectedly: %v", err)
 	}
@@ -379,7 +378,7 @@ func TestRecordSoftDelete(t *testing.T) {
 }
 
 func TestRecordList(t *testing.T) {
-	db := InitDB("test_data_store_record_list.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -450,7 +449,7 @@ func TestRecordList(t *testing.T) {
 }
 
 func TestRecordCount(t *testing.T) {
-	db := InitDB("test_data_store_record_count.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -499,7 +498,7 @@ func TestRecordCount(t *testing.T) {
 }
 
 func TestRecordQuery(t *testing.T) {
-	db := InitDB("test_data_store_record_query.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -585,7 +584,7 @@ func TestRecordQuery(t *testing.T) {
 // --- Tests for Empty ID Handling ---
 
 func TestRecordCreateWithEmptyID(t *testing.T) {
-	db := InitDB("test_data_store_record_create_empty_id.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -616,7 +615,7 @@ func TestRecordCreateWithEmptyID(t *testing.T) {
 }
 
 func TestRecordUpdateWithEmptyID(t *testing.T) {
-	db := InitDB("test_data_store_record_update_empty_id.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -654,7 +653,7 @@ func TestRecordUpdateWithEmptyID(t *testing.T) {
 }
 
 func TestRecordDeleteWithEmptyID(t *testing.T) {
-	db := InitDB("test_data_store_record_delete_empty_id.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -682,7 +681,7 @@ func TestRecordDeleteWithEmptyID(t *testing.T) {
 }
 
 func TestRecordFindByIDWithEmptyID(t *testing.T) {
-	db := InitDB("test_data_store_record_find_empty_id.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -710,7 +709,7 @@ func TestRecordFindByIDWithEmptyID(t *testing.T) {
 }
 
 func TestRecordSoftDeleteWithEmptyID(t *testing.T) {
-	db := InitDB("test_data_store_record_soft_delete_empty_id.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
@@ -740,7 +739,7 @@ func TestRecordSoftDeleteWithEmptyID(t *testing.T) {
 // --- Payload Search Test ---
 
 func TestRecordQueryPayloadSearch(t *testing.T) {
-	db := InitDB("test_data_store_record_query_payload_search.db")
+	db := InitDB()
 	defer db.Close()
 
 	store, err := customstore.NewStore(customstore.NewStoreOptions{
