@@ -62,14 +62,14 @@ type RecordInterface interface {
 var _ RecordInterface = (*recordImplementation)(nil)
 
 type recordImplementation struct {
-	IDField            string `db:"id"`
-	TypeField          string `db:"record_type"`
-	PayloadField       string `db:"payload"`
-	MetasField         string `db:"metas"`
-	MemoField          string `db:"memo"`
-	CreatedAtField     orm.CreatedAt
-	UpdatedAtField     orm.UpdatedAt
-	SoftDeletedAtField soft_delete.SoftDeletesMaxDate
+	IDField        string `db:"id"`
+	TypeField      string `db:"record_type"`
+	PayloadField   string `db:"payload"`
+	MetasField     string `db:"metas"`
+	MemoField      string `db:"memo"`
+	CreatedAtField orm.CreatedAt
+	UpdatedAtField orm.UpdatedAt
+	soft_delete.SoftDeletesMaxDate
 }
 
 // ============================================================================
@@ -129,7 +129,7 @@ func NewRecordFromExistingData(data map[string]string) RecordInterface {
 // ============================================================================
 
 func (o *recordImplementation) IsSoftDeleted() bool {
-	return o.SoftDeletedAtField.SoftDeletedAt.Before(carbon.Now(carbon.UTC).StdTime())
+	return o.SoftDeletesMaxDate.SoftDeletedAt.Before(carbon.Now(carbon.UTC).StdTime())
 }
 
 // ============================================================================
@@ -306,21 +306,21 @@ func (record *recordImplementation) SetPayloadMapKey(key string, value any) erro
 }
 
 func (o *recordImplementation) SoftDeletedAt() string {
-	if o.SoftDeletedAtField.SoftDeletedAt.IsZero() {
+	if o.SoftDeletesMaxDate.SoftDeletedAt.IsZero() {
 		return ""
 	}
-	return carbon.CreateFromStdTime(o.SoftDeletedAtField.SoftDeletedAt).ToDateTimeString()
+	return carbon.CreateFromStdTime(o.SoftDeletesMaxDate.SoftDeletedAt).ToDateTimeString()
 }
 
 func (o *recordImplementation) SoftDeletedAtCarbon() *carbon.Carbon {
-	return carbon.CreateFromStdTime(o.SoftDeletedAtField.SoftDeletedAt)
+	return carbon.CreateFromStdTime(o.SoftDeletesMaxDate.SoftDeletedAt)
 }
 
 func (o *recordImplementation) SetSoftDeletedAt(softDeletedAt string) {
 	if softDeletedAt == "" {
 		return
 	}
-	o.SoftDeletedAtField.SoftDeletedAt = carbon.Parse(softDeletedAt, carbon.UTC).StdTime()
+	o.SoftDeletesMaxDate.SoftDeletedAt = carbon.Parse(softDeletedAt, carbon.UTC).StdTime()
 }
 
 func (o *recordImplementation) UpdatedAt() string {

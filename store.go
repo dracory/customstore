@@ -356,7 +356,7 @@ func (st *storeImplementation) RecordList(query RecordQueryInterface) ([]RecordI
 		record.SetMemo(r.Memo)
 		record.CreatedAtField.CreatedAt = r.CreatedAt
 		record.UpdatedAtField.UpdatedAt = r.UpdatedAt
-		record.SoftDeletedAtField.SoftDeletedAt = r.SoftDeletedAt
+		record.SoftDeletesMaxDate.SoftDeletedAt = r.SoftDeletedAt
 		list = append(list, record)
 	}
 
@@ -433,7 +433,8 @@ func (st *storeImplementation) RecordUpdate(record RecordInterface) error {
 
 // buildQuery builds a neat query from the record query interface.
 func (st *storeImplementation) buildQuery(query RecordQueryInterface) contractsorm.Query {
-	q := st.db.Query()
+	// Use Model() to enable neat's automatic soft delete handling via SoftDeletesMaxDate
+	q := st.db.Query().Model(&recordImplementation{})
 
 	if query == nil {
 		return q
@@ -486,12 +487,9 @@ func (st *storeImplementation) buildQuery(query RecordQueryInterface) contractso
 		q = q.Where(COLUMN_PAYLOAD+" NOT LIKE ?", "%"+needle+"%")
 	}
 
-	// Handle soft delete filtering
+	// Handle soft delete filtering via neat's automatic handling (SoftDeletesMaxDate)
 	if query.IsSoftDeletedIncluded() {
 		q = q.WithSoftDeleted()
-	} else {
-		// By default, filter out soft-deleted records
-		q = q.Where(COLUMN_SOFT_DELETED_AT+" = ?", carbon.Parse(MAX_DATETIME, carbon.UTC).StdTime())
 	}
 
 	return q
