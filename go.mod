@@ -9,7 +9,7 @@ require (
 )
 
 require (
-	github.com/dracory/neat v0.23.0
+	github.com/dracory/neat v0.26.0
 	modernc.org/sqlite v1.52.0
 )
 
