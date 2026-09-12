@@ -469,6 +469,14 @@ func (st *storeImplementation) buildQuery(query RecordQueryInterface) contractso
 		q = q.OrderByDesc(query.GetOrderBy())
 	}
 
+	if query.IsCreatedAtGteSet() && query.GetCreatedAtGte() != "" {
+		q = q.Where(COLUMN_CREATED_AT+" >= ?", query.GetCreatedAtGte())
+	}
+
+	if query.IsCreatedAtLteSet() && query.GetCreatedAtLte() != "" {
+		q = q.Where(COLUMN_CREATED_AT+" <= ?", query.GetCreatedAtLte())
+	}
+
 	// Payload search (OR within positive searches, AND for negative)
 	searchTerms := query.GetPayloadSearch()
 	if len(searchTerms) > 0 {

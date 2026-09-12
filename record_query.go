@@ -49,6 +49,15 @@ type RecordQueryInterface interface {
 	GetPayloadSearch() []string
 	AddPayloadSearchNot(needle string) RecordQueryInterface
 	GetPayloadSearchNot() []string
+
+	// CreatedAt date-range filters (YYYY-MM-DD HH:MM:SS format)
+	IsCreatedAtGteSet() bool
+	GetCreatedAtGte() string
+	SetCreatedAtGte(createdAtGte string) RecordQueryInterface
+
+	IsCreatedAtLteSet() bool
+	GetCreatedAtLte() string
+	SetCreatedAtLte(createdAtLte string) RecordQueryInterface
 }
 
 // ============================================================================
@@ -99,6 +108,12 @@ func (o *recordQueryImplementation) Validate() error {
 	}
 	if o.IsOffsetSet() && o.GetOffset() < 0 {
 		return errors.New("record query: offset cannot be negative")
+	}
+	if o.IsCreatedAtGteSet() && o.GetCreatedAtGte() == "" {
+		return errors.New("record query: created_at_gte cannot be empty")
+	}
+	if o.IsCreatedAtLteSet() && o.GetCreatedAtLte() == "" {
+		return errors.New("record query: created_at_lte cannot be empty")
 	}
 	return nil
 }
@@ -286,4 +301,42 @@ func (o *recordQueryImplementation) GetPayloadSearchNot() []string {
 		return v
 	}
 	return []string{}
+}
+
+// == CREATED AT GTE ==
+
+func (o *recordQueryImplementation) IsCreatedAtGteSet() bool {
+	return o.hasProperty("created_at_gte")
+}
+
+func (o *recordQueryImplementation) GetCreatedAtGte() string {
+	return o.properties["created_at_gte"].(string)
+}
+
+func (o *recordQueryImplementation) SetCreatedAtGte(createdAtGte string) RecordQueryInterface {
+	if createdAtGte == "" {
+		delete(o.properties, "created_at_gte")
+	} else {
+		o.properties["created_at_gte"] = createdAtGte
+	}
+	return o
+}
+
+// == CREATED AT LTE ==
+
+func (o *recordQueryImplementation) IsCreatedAtLteSet() bool {
+	return o.hasProperty("created_at_lte")
+}
+
+func (o *recordQueryImplementation) GetCreatedAtLte() string {
+	return o.properties["created_at_lte"].(string)
+}
+
+func (o *recordQueryImplementation) SetCreatedAtLte(createdAtLte string) RecordQueryInterface {
+	if createdAtLte == "" {
+		delete(o.properties, "created_at_lte")
+	} else {
+		o.properties["created_at_lte"] = createdAtLte
+	}
+	return o
 }
