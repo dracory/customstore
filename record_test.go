@@ -20,36 +20,36 @@ func TestNewRecord(t *testing.T) {
 	if record == nil {
 		t.Fatal("NewRecord returned nil")
 	}
-	if record.ID() == "" {
+	if record.GetID() == "" {
 		t.Error("ID should be generated, but was empty")
 	}
-	if record.ID() == "" {
+	if record.GetID() == "" {
 		t.Error("ID should not be empty")
 	}
-	if record.Type() != recordType {
-		t.Errorf("Expected record type %q, but got %q", recordType, record.Type())
+	if record.GetType() != recordType {
+		t.Errorf("Expected record type %q, but got %q", recordType, record.GetType())
 	}
-	if record.Memo() != "" {
-		t.Errorf("Expected empty memo, but got %q", record.Memo())
+	if record.GetMemo() != "" {
+		t.Errorf("Expected empty memo, but got %q", record.GetMemo())
 	}
-	metas, err := record.Metas()
+	metas, err := record.GetMetas()
 	if err != nil {
-		t.Errorf("record.Metas() failed: %v", err)
+		t.Errorf("record.GetMetas() failed: %v", err)
 	}
 	if len(metas) != 0 {
 		t.Errorf("Expected empty metas, but got %v", metas)
 	}
-	if record.Payload() != "" {
-		t.Errorf("Expected empty payload, but got %q", record.Payload())
+	if record.GetPayload() != "" {
+		t.Errorf("Expected empty payload, but got %q", record.GetPayload())
 	}
-	if record.CreatedAt() == "" {
+	if record.GetCreatedAt() == "" {
 		t.Error("CreatedAt should not be empty")
 	}
-	if record.UpdatedAt() == "" {
+	if record.GetUpdatedAt() == "" {
 		t.Error("UpdatedAt should not be empty")
 	}
-	if record.SoftDeletedAt() != customstore.MAX_DATETIME {
-		t.Errorf("Expected SoftDeletedAt to be %q, but got %q", customstore.MAX_DATETIME, record.SoftDeletedAt())
+	if record.GetSoftDeletedAt() != customstore.MAX_DATETIME {
+		t.Errorf("Expected SoftDeletedAt to be %q, but got %q", customstore.MAX_DATETIME, record.GetSoftDeletedAt())
 	}
 	if record.IsSoftDeleted() {
 		t.Error("Expected IsSoftDeleted to be false, but got true")
@@ -78,49 +78,49 @@ func TestNewRecordFromExistingData(t *testing.T) {
 	if record == nil {
 		t.Fatal("NewRecordFromExistingData returned nil")
 	}
-	if record.ID() != "test-id-123" {
-		t.Errorf("Expected ID %q, but got %q", "test-id-123", record.ID())
+	if record.GetID() != "test-id-123" {
+		t.Errorf("Expected ID %q, but got %q", "test-id-123", record.GetID())
 	}
-	if record.Type() != "order" {
-		t.Errorf("Expected Type %q, but got %q", "order", record.Type())
+	if record.GetType() != "order" {
+		t.Errorf("Expected Type %q, but got %q", "order", record.GetType())
 	}
-	if record.Memo() != "Test memo" {
-		t.Errorf("Expected Memo %q, but got %q", "Test memo", record.Memo())
+	if record.GetMemo() != "Test memo" {
+		t.Errorf("Expected Memo %q, but got %q", "Test memo", record.GetMemo())
 	}
 
-	metas, err := record.Metas()
+	metas, err := record.GetMetas()
 	if err != nil {
-		t.Errorf("record.Metas() failed: %v", err)
+		t.Errorf("record.GetMetas() failed: %v", err)
 	}
 	if !reflect.DeepEqual(metas, expectedMetas) {
 		t.Errorf("Expected metas %v, but got %v", expectedMetas, metas)
 	}
-	if metaVal := record.Meta("key1"); metaVal != "value1" {
-		t.Errorf("Expected Meta('key1') to be %q, but got %q", "value1", metaVal)
+	if metaVal := record.GetMeta("key1"); metaVal != "value1" {
+		t.Errorf("Expected GetMeta('key1') to be %q, but got %q", "value1", metaVal)
 	}
-	if metaVal := record.Meta("nonexistent"); metaVal != "" {
-		t.Errorf("Expected Meta('nonexistent') to be empty, but got %q", metaVal)
+	if metaVal := record.GetMeta("nonexistent"); metaVal != "" {
+		t.Errorf("Expected GetMeta('nonexistent') to be empty, but got %q", metaVal)
 	}
 
-	if record.Payload() != expectedPayloadStr {
-		t.Errorf("Expected Payload %q, but got %q", expectedPayloadStr, record.Payload())
+	if record.GetPayload() != expectedPayloadStr {
+		t.Errorf("Expected Payload %q, but got %q", expectedPayloadStr, record.GetPayload())
 	}
-	payloadMap, err := record.PayloadMap()
+	payloadMap, err := record.GetPayloadMap()
 	if err != nil {
-		t.Errorf("record.PayloadMap() failed: %v", err)
+		t.Errorf("record.GetPayloadMap() failed: %v", err)
 	}
 	if !reflect.DeepEqual(payloadMap, expectedPayloadMap) {
-		t.Errorf("Expected PayloadMap %v, but got %v", expectedPayloadMap, payloadMap)
+		t.Errorf("Expected GetPayloadMap %v, but got %v", expectedPayloadMap, payloadMap)
 	}
 
-	if record.CreatedAt() != now {
-		t.Errorf("Expected CreatedAt %q, but got %q", now, record.CreatedAt())
+	if record.GetCreatedAt() != now {
+		t.Errorf("Expected CreatedAt %q, but got %q", now, record.GetCreatedAt())
 	}
-	if record.UpdatedAt() != now {
-		t.Errorf("Expected UpdatedAt %q, but got %q", now, record.UpdatedAt())
+	if record.GetUpdatedAt() != now {
+		t.Errorf("Expected UpdatedAt %q, but got %q", now, record.GetUpdatedAt())
 	}
-	if record.SoftDeletedAt() != customstore.MAX_DATETIME {
-		t.Errorf("Expected SoftDeletedAt %q, but got %q", customstore.MAX_DATETIME, record.SoftDeletedAt())
+	if record.GetSoftDeletedAt() != customstore.MAX_DATETIME {
+		t.Errorf("Expected SoftDeletedAt %q, but got %q", customstore.MAX_DATETIME, record.GetSoftDeletedAt())
 	}
 	if record.IsSoftDeleted() {
 		t.Error("Expected IsSoftDeleted to be false, but got true")
@@ -156,29 +156,29 @@ func TestTimestamps(t *testing.T) {
 
 	// CreatedAt
 	record.SetCreatedAt(nowStr)
-	if record.CreatedAt() != nowStr {
-		t.Errorf("CreatedAt: Expected string %q, but got %q", nowStr, record.CreatedAt())
+	if record.GetCreatedAt() != nowStr {
+		t.Errorf("CreatedAt: Expected string %q, but got %q", nowStr, record.GetCreatedAt())
 	}
-	if record.CreatedAtCarbon().Timestamp() != now.Timestamp() {
-		t.Errorf("CreatedAtCarbon: Expected timestamp %d, but got %d", now.Timestamp(), record.CreatedAtCarbon().Timestamp())
+	if record.GetCreatedAtCarbon().Timestamp() != now.Timestamp() {
+		t.Errorf("CreatedAtCarbon: Expected timestamp %d, but got %d", now.Timestamp(), record.GetCreatedAtCarbon().Timestamp())
 	}
 
 	// UpdatedAt
 	record.SetUpdatedAt(nowStr)
-	if record.UpdatedAt() != nowStr {
-		t.Errorf("UpdatedAt: Expected string %q, but got %q", nowStr, record.UpdatedAt())
+	if record.GetUpdatedAt() != nowStr {
+		t.Errorf("UpdatedAt: Expected string %q, but got %q", nowStr, record.GetUpdatedAt())
 	}
-	if record.UpdatedAtCarbon().Timestamp() != now.Timestamp() {
-		t.Errorf("UpdatedAtCarbon: Expected timestamp %d, but got %d", now.Timestamp(), record.UpdatedAtCarbon().Timestamp())
+	if record.GetUpdatedAtCarbon().Timestamp() != now.Timestamp() {
+		t.Errorf("UpdatedAtCarbon: Expected timestamp %d, but got %d", now.Timestamp(), record.GetUpdatedAtCarbon().Timestamp())
 	}
 
 	// SoftDeletedAt
 	record.SetSoftDeletedAt(nowStr)
-	if record.SoftDeletedAt() != nowStr {
-		t.Errorf("SoftDeletedAt: Expected string %q, but got %q", nowStr, record.SoftDeletedAt())
+	if record.GetSoftDeletedAt() != nowStr {
+		t.Errorf("SoftDeletedAt: Expected string %q, but got %q", nowStr, record.GetSoftDeletedAt())
 	}
-	if record.SoftDeletedAtCarbon().Timestamp() != now.Timestamp() {
-		t.Errorf("SoftDeletedAtCarbon: Expected timestamp %d, but got %d", now.Timestamp(), record.SoftDeletedAtCarbon().Timestamp())
+	if record.GetSoftDeletedAtCarbon().Timestamp() != now.Timestamp() {
+		t.Errorf("SoftDeletedAtCarbon: Expected timestamp %d, but got %d", now.Timestamp(), record.GetSoftDeletedAtCarbon().Timestamp())
 	}
 }
 
@@ -186,8 +186,8 @@ func TestID(t *testing.T) {
 	record := customstore.NewRecord("test")
 	newID := "custom-id-456"
 	record.SetID(newID)
-	if record.ID() != newID {
-		t.Errorf("Expected ID %q, but got %q", newID, record.ID())
+	if record.GetID() != newID {
+		t.Errorf("Expected ID %q, but got %q", newID, record.GetID())
 	}
 }
 
@@ -195,8 +195,8 @@ func TestType(t *testing.T) {
 	record := customstore.NewRecord("initialType")
 	newType := "updatedType"
 	record.SetType(newType)
-	if record.Type() != newType {
-		t.Errorf("Expected Type %q, but got %q", newType, record.Type())
+	if record.GetType() != newType {
+		t.Errorf("Expected Type %q, but got %q", newType, record.GetType())
 	}
 }
 
@@ -204,8 +204,8 @@ func TestMemo(t *testing.T) {
 	record := customstore.NewRecord("test")
 	newMemo := "This is a test memo."
 	record.SetMemo(newMemo)
-	if record.Memo() != newMemo {
-		t.Errorf("Expected Memo %q, but got %q", newMemo, record.Memo())
+	if record.GetMemo() != newMemo {
+		t.Errorf("Expected Memo %q, but got %q", newMemo, record.GetMemo())
 	}
 }
 
@@ -213,15 +213,15 @@ func TestMetas(t *testing.T) {
 	record := customstore.NewRecord("test")
 
 	// Initial state
-	metas, err := record.Metas()
+	metas, err := record.GetMetas()
 	if err != nil {
-		t.Errorf("Initial Metas(): unexpected error: %v", err)
+		t.Errorf("Initial GetMetas(): unexpected error: %v", err)
 	}
 	if len(metas) != 0 {
-		t.Errorf("Initial Metas(): expected empty map, got %v", metas)
+		t.Errorf("Initial GetMetas(): expected empty map, got %v", metas)
 	}
-	if metaVal := record.Meta("any"); metaVal != "" {
-		t.Errorf("Initial Meta('any'): expected empty string, got %q", metaVal)
+	if metaVal := record.GetMeta("any"); metaVal != "" {
+		t.Errorf("Initial GetMeta('any'): expected empty string, got %q", metaVal)
 	}
 
 	// SetMetas (overwrite)
@@ -230,18 +230,18 @@ func TestMetas(t *testing.T) {
 	if err != nil {
 		t.Errorf("SetMetas(): unexpected error: %v", err)
 	}
-	metas, err = record.Metas()
+	metas, err = record.GetMetas()
 	if err != nil {
-		t.Errorf("Metas() after SetMetas: unexpected error: %v", err)
+		t.Errorf("GetMetas() after SetMetas: unexpected error: %v", err)
 	}
 	if !reflect.DeepEqual(metas, setMetasMap) {
-		t.Errorf("Metas() after SetMetas: expected %v, got %v", setMetasMap, metas)
+		t.Errorf("GetMetas() after SetMetas: expected %v, got %v", setMetasMap, metas)
 	}
-	if metaVal := record.Meta("key1"); metaVal != "val1" {
-		t.Errorf("Meta('key1') after SetMetas: expected %q, got %q", "val1", metaVal)
+	if metaVal := record.GetMeta("key1"); metaVal != "val1" {
+		t.Errorf("GetMeta('key1') after SetMetas: expected %q, got %q", "val1", metaVal)
 	}
-	if metaVal := record.Meta("key2"); metaVal != "val2" {
-		t.Errorf("Meta('key2') after SetMetas: expected %q, got %q", "val2", metaVal)
+	if metaVal := record.GetMeta("key2"); metaVal != "val2" {
+		t.Errorf("GetMeta('key2') after SetMetas: expected %q, got %q", "val2", metaVal)
 	}
 
 	// SetMeta (upsert single)
@@ -250,15 +250,15 @@ func TestMetas(t *testing.T) {
 		t.Errorf("SetMeta('key3'): unexpected error: %v", err)
 	}
 	expectedMetasAfterSet := map[string]string{"key1": "val1", "key2": "val2", "key3": "val3"}
-	metas, err = record.Metas()
+	metas, err = record.GetMetas()
 	if err != nil {
-		t.Errorf("Metas() after SetMeta('key3'): unexpected error: %v", err)
+		t.Errorf("GetMetas() after SetMeta('key3'): unexpected error: %v", err)
 	}
 	if !reflect.DeepEqual(metas, expectedMetasAfterSet) {
-		t.Errorf("Metas() after SetMeta('key3'): expected %v, got %v", expectedMetasAfterSet, metas)
+		t.Errorf("GetMetas() after SetMeta('key3'): expected %v, got %v", expectedMetasAfterSet, metas)
 	}
-	if metaVal := record.Meta("key3"); metaVal != "val3" {
-		t.Errorf("Meta('key3') after SetMeta: expected %q, got %q", "val3", metaVal)
+	if metaVal := record.GetMeta("key3"); metaVal != "val3" {
+		t.Errorf("GetMeta('key3') after SetMeta: expected %q, got %q", "val3", metaVal)
 	}
 
 	// SetMeta (update existing)
@@ -267,15 +267,15 @@ func TestMetas(t *testing.T) {
 		t.Errorf("SetMeta('key1' update): unexpected error: %v", err)
 	}
 	expectedMetasAfterUpdate := map[string]string{"key1": "newVal1", "key2": "val2", "key3": "val3"}
-	metas, err = record.Metas()
+	metas, err = record.GetMetas()
 	if err != nil {
-		t.Errorf("Metas() after SetMeta('key1' update): unexpected error: %v", err)
+		t.Errorf("GetMetas() after SetMeta('key1' update): unexpected error: %v", err)
 	}
 	if !reflect.DeepEqual(metas, expectedMetasAfterUpdate) {
-		t.Errorf("Metas() after SetMeta('key1' update): expected %v, got %v", expectedMetasAfterUpdate, metas)
+		t.Errorf("GetMetas() after SetMeta('key1' update): expected %v, got %v", expectedMetasAfterUpdate, metas)
 	}
-	if metaVal := record.Meta("key1"); metaVal != "newVal1" {
-		t.Errorf("Meta('key1') after update: expected %q, got %q", "newVal1", metaVal)
+	if metaVal := record.GetMeta("key1"); metaVal != "newVal1" {
+		t.Errorf("GetMeta('key1') after update: expected %q, got %q", "newVal1", metaVal)
 	}
 
 	// UpsertMetas (add and update)
@@ -285,18 +285,18 @@ func TestMetas(t *testing.T) {
 		t.Errorf("UpsertMetas(): unexpected error: %v", err)
 	}
 	expectedMetasAfterUpsert := map[string]string{"key1": "newVal1", "key2": "newVal2", "key3": "val3", "key4": "val4"}
-	metas, err = record.Metas()
+	metas, err = record.GetMetas()
 	if err != nil {
-		t.Errorf("Metas() after UpsertMetas: unexpected error: %v", err)
+		t.Errorf("GetMetas() after UpsertMetas: unexpected error: %v", err)
 	}
 	if !reflect.DeepEqual(metas, expectedMetasAfterUpsert) {
-		t.Errorf("Metas() after UpsertMetas: expected %v, got %v", expectedMetasAfterUpsert, metas)
+		t.Errorf("GetMetas() after UpsertMetas: expected %v, got %v", expectedMetasAfterUpsert, metas)
 	}
-	if metaVal := record.Meta("key2"); metaVal != "newVal2" {
-		t.Errorf("Meta('key2') after UpsertMetas: expected %q, got %q", "newVal2", metaVal)
+	if metaVal := record.GetMeta("key2"); metaVal != "newVal2" {
+		t.Errorf("GetMeta('key2') after UpsertMetas: expected %q, got %q", "newVal2", metaVal)
 	}
-	if metaVal := record.Meta("key4"); metaVal != "val4" {
-		t.Errorf("Meta('key4') after UpsertMetas: expected %q, got %q", "val4", metaVal)
+	if metaVal := record.GetMeta("key4"); metaVal != "val4" {
+		t.Errorf("GetMeta('key4') after UpsertMetas: expected %q, got %q", "val4", metaVal)
 	}
 
 	// Test getting metas from invalid JSON (via NewRecordFromExistingData)
@@ -305,18 +305,18 @@ func TestMetas(t *testing.T) {
 		customstore.COLUMN_METAS: `{"invalid"`, // Invalid JSON
 	}
 	invalidRecord := customstore.NewRecordFromExistingData(invalidMetasData)
-	metas, err = invalidRecord.Metas()
+	metas, err = invalidRecord.GetMetas()
 	if err == nil {
-		t.Error("Metas() with invalid JSON: expected an error, but got nil")
+		t.Error("GetMetas() with invalid JSON: expected an error, but got nil")
 	}
-	// Note: The current Metas() implementation returns an empty map on error.
+	// Note: The current GetMetas() implementation returns an empty map on error.
 	// Depending on desired behavior, you might expect nil here.
 	if len(metas) != 0 {
-		t.Errorf("Metas() with invalid JSON: expected empty map, got %v", metas)
+		t.Errorf("GetMetas() with invalid JSON: expected empty map, got %v", metas)
 	}
-	// Meta should return empty string if Metas() fails
-	if metaVal := invalidRecord.Meta("key1"); metaVal != "" {
-		t.Errorf("Meta() with invalid JSON: expected empty string, got %q", metaVal)
+	// GetMeta should return empty string if GetMetas() fails
+	if metaVal := invalidRecord.GetMeta("key1"); metaVal != "" {
+		t.Errorf("GetMeta() with invalid JSON: expected empty string, got %q", metaVal)
 	}
 }
 
@@ -325,8 +325,8 @@ func TestPayload(t *testing.T) {
 	payloadStr := `{"product":"widget","price":19.99}`
 
 	record.SetPayload(payloadStr)
-	if record.Payload() != payloadStr {
-		t.Errorf("Expected Payload %q, got %q", payloadStr, record.Payload())
+	if record.GetPayload() != payloadStr {
+		t.Errorf("Expected Payload %q, got %q", payloadStr, record.GetPayload())
 	}
 }
 
@@ -334,12 +334,12 @@ func TestPayloadMap(t *testing.T) {
 	record := customstore.NewRecord("test")
 
 	// Initial empty payload
-	payloadMap, err := record.PayloadMap()
+	payloadMap, err := record.GetPayloadMap()
 	if err != nil {
-		t.Errorf("Initial PayloadMap(): unexpected error: %v", err)
+		t.Errorf("Initial GetPayloadMap(): unexpected error: %v", err)
 	}
 	if len(payloadMap) != 0 {
-		t.Errorf("Initial PayloadMap(): expected empty map, got %v", payloadMap)
+		t.Errorf("Initial GetPayloadMap(): expected empty map, got %v", payloadMap)
 	}
 
 	// Set payload map
@@ -355,7 +355,7 @@ func TestPayloadMap(t *testing.T) {
 
 	// Verify Payload string is correct JSON
 	var actualMap map[string]any
-	err = json.Unmarshal([]byte(record.Payload()), &actualMap)
+	err = json.Unmarshal([]byte(record.GetPayload()), &actualMap)
 	if err != nil {
 		t.Errorf("json.Unmarshal payload string failed: %v", err)
 	}
@@ -365,12 +365,12 @@ func TestPayloadMap(t *testing.T) {
 	}
 
 	// Retrieve payload map
-	retrievedMap, err := record.PayloadMap()
+	retrievedMap, err := record.GetPayloadMap()
 	if err != nil {
-		t.Errorf("PayloadMap() after SetPayloadMap: unexpected error: %v", err)
+		t.Errorf("GetPayloadMap() after SetPayloadMap: unexpected error: %v", err)
 	}
 	if !reflect.DeepEqual(initialMap, retrievedMap) {
-		t.Errorf("Retrieved PayloadMap incorrect. Expected %v, got %v", initialMap, retrievedMap)
+		t.Errorf("Retrieved GetPayloadMap incorrect. Expected %v, got %v", initialMap, retrievedMap)
 	}
 
 	// Test getting from invalid JSON payload (via NewRecordFromExistingData)
@@ -379,12 +379,12 @@ func TestPayloadMap(t *testing.T) {
 		customstore.COLUMN_PAYLOAD: `{"invalid"`, // Invalid JSON
 	}
 	invalidRecord := customstore.NewRecordFromExistingData(invalidPayloadData)
-	payloadMap, err = invalidRecord.PayloadMap()
+	payloadMap, err = invalidRecord.GetPayloadMap()
 	if err == nil {
-		t.Error("PayloadMap() with invalid JSON: expected an error, but got nil")
+		t.Error("GetPayloadMap() with invalid JSON: expected an error, but got nil")
 	}
 	if payloadMap != nil {
-		t.Errorf("PayloadMap() with invalid JSON: expected nil map, got %v", payloadMap)
+		t.Errorf("GetPayloadMap() with invalid JSON: expected nil map, got %v", payloadMap)
 	}
 }
 
@@ -398,21 +398,21 @@ func TestPayloadMapKey(t *testing.T) {
 	}
 
 	// Test getting the key
-	value, err := record.PayloadMapKey("name")
+	value, err := record.GetPayloadMapKey("name")
 	if err != nil {
-		t.Errorf("PayloadMapKey('name'): unexpected error: %v", err)
+		t.Errorf("GetPayloadMapKey('name'): unexpected error: %v", err)
 	}
 	if value != "John" {
-		t.Errorf("PayloadMapKey('name'): expected %q, got %q", "John", value)
+		t.Errorf("GetPayloadMapKey('name'): expected %q, got %q", "John", value)
 	}
 
 	// Test getting a non-existent key
-	value, err = record.PayloadMapKey("nonexistent")
+	value, err = record.GetPayloadMapKey("nonexistent")
 	if err != nil {
-		t.Errorf("PayloadMapKey('nonexistent'): unexpected error: %v", err)
+		t.Errorf("GetPayloadMapKey('nonexistent'): unexpected error: %v", err)
 	}
 	if value != nil {
-		t.Errorf("PayloadMapKey('nonexistent'): expected nil, got %v", value)
+		t.Errorf("GetPayloadMapKey('nonexistent'): expected nil, got %v", value)
 	}
 
 	// Test setting multiple keys (numeric)
@@ -421,13 +421,13 @@ func TestPayloadMapKey(t *testing.T) {
 		t.Errorf("SetPayloadMapKey('age', 30): unexpected error: %v", err)
 	}
 
-	value, err = record.PayloadMapKey("age")
+	value, err = record.GetPayloadMapKey("age")
 	if err != nil {
-		t.Errorf("PayloadMapKey('age'): unexpected error: %v", err)
+		t.Errorf("GetPayloadMapKey('age'): unexpected error: %v", err)
 	}
 	// JSON numbers are decoded as float64
 	if age, ok := value.(float64); !ok || age != 30.0 {
-		t.Errorf("PayloadMapKey('age'): expected float64(30), got %T(%v)", value, value)
+		t.Errorf("GetPayloadMapKey('age'): expected float64(30), got %T(%v)", value, value)
 	}
 
 	// Test setting a boolean key
@@ -435,12 +435,12 @@ func TestPayloadMapKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("SetPayloadMapKey('active', true): unexpected error: %v", err)
 	}
-	value, err = record.PayloadMapKey("active")
+	value, err = record.GetPayloadMapKey("active")
 	if err != nil {
-		t.Errorf("PayloadMapKey('active'): unexpected error: %v", err)
+		t.Errorf("GetPayloadMapKey('active'): unexpected error: %v", err)
 	}
 	if active, ok := value.(bool); !ok || !active {
-		t.Errorf("PayloadMapKey('active'): expected bool(true), got %T(%v)", value, value)
+		t.Errorf("GetPayloadMapKey('active'): expected bool(true), got %T(%v)", value, value)
 	}
 
 	// Test setting a nested structure (map)
@@ -449,13 +449,13 @@ func TestPayloadMapKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("SetPayloadMapKey('address', map): unexpected error: %v", err)
 	}
-	value, err = record.PayloadMapKey("address")
+	value, err = record.GetPayloadMapKey("address")
 	if err != nil {
-		t.Errorf("PayloadMapKey('address'): unexpected error: %v", err)
+		t.Errorf("GetPayloadMapKey('address'): unexpected error: %v", err)
 	}
 	// JSON unmarshalling turns nested maps into map[string]any
 	if !reflect.DeepEqual(nestedMap, value) {
-		t.Errorf("PayloadMapKey('address'): expected %v, got %v", nestedMap, value)
+		t.Errorf("GetPayloadMapKey('address'): expected %v, got %v", nestedMap, value)
 	}
 
 	// Test setting a slice
@@ -464,18 +464,18 @@ func TestPayloadMapKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("SetPayloadMapKey('tags', slice): unexpected error: %v", err)
 	}
-	value, err = record.PayloadMapKey("tags")
+	value, err = record.GetPayloadMapKey("tags")
 	if err != nil {
-		t.Errorf("PayloadMapKey('tags'): unexpected error: %v", err)
+		t.Errorf("GetPayloadMapKey('tags'): unexpected error: %v", err)
 	}
 	if !reflect.DeepEqual(tags, value) {
-		t.Errorf("PayloadMapKey('tags'): expected %v, got %v", tags, value)
+		t.Errorf("GetPayloadMapKey('tags'): expected %v, got %v", tags, value)
 	}
 
 	// Verify the entire payload map
-	payloadMap, err := record.PayloadMap()
+	payloadMap, err := record.GetPayloadMap()
 	if err != nil {
-		t.Errorf("PayloadMap() for verification: unexpected error: %v", err)
+		t.Errorf("GetPayloadMap() for verification: unexpected error: %v", err)
 	}
 	expectedMap := map[string]any{
 		"name":    "John",
@@ -485,7 +485,7 @@ func TestPayloadMapKey(t *testing.T) {
 		"tags":    []any{"go", "test", "json"},
 	}
 	if !reflect.DeepEqual(expectedMap, payloadMap) {
-		t.Errorf("Verified PayloadMap incorrect. Expected %v, got %v", expectedMap, payloadMap)
+		t.Errorf("Verified GetPayloadMap incorrect. Expected %v, got %v", expectedMap, payloadMap)
 	}
 
 	// Test updating an existing key
@@ -493,12 +493,12 @@ func TestPayloadMapKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("SetPayloadMapKey('name', 'Johnny'): unexpected error: %v", err)
 	}
-	value, err = record.PayloadMapKey("name")
+	value, err = record.GetPayloadMapKey("name")
 	if err != nil {
-		t.Errorf("PayloadMapKey('name') after update: unexpected error: %v", err)
+		t.Errorf("GetPayloadMapKey('name') after update: unexpected error: %v", err)
 	}
 	if value != "Johnny" {
-		t.Errorf("PayloadMapKey('name') after update: expected %q, got %q", "Johnny", value)
+		t.Errorf("GetPayloadMapKey('name') after update: expected %q, got %q", "Johnny", value)
 	}
 
 	// Test getting/setting key from invalid JSON payload (via NewRecordFromExistingData)
@@ -509,12 +509,12 @@ func TestPayloadMapKey(t *testing.T) {
 	invalidRecord := customstore.NewRecordFromExistingData(invalidPayloadData)
 
 	// Getting should fail
-	value, err = invalidRecord.PayloadMapKey("name")
+	value, err = invalidRecord.GetPayloadMapKey("name")
 	if err == nil {
-		t.Error("PayloadMapKey() get with invalid JSON: expected an error, but got nil")
+		t.Error("GetPayloadMapKey() get with invalid JSON: expected an error, but got nil")
 	}
 	if value != nil {
-		t.Errorf("PayloadMapKey() get with invalid JSON: expected nil value, got %v", value)
+		t.Errorf("GetPayloadMapKey() get with invalid JSON: expected nil value, got %v", value)
 	}
 
 	// Setting should fail (because it reads first)
@@ -529,4 +529,3 @@ func TestPayloadMapKey(t *testing.T) {
 func sleepForTest(duration time.Duration) {
 	time.Sleep(duration)
 }
-

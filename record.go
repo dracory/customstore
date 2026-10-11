@@ -18,40 +18,40 @@ import (
 type RecordInterface interface {
 	IsSoftDeleted() bool
 
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
 	SetCreatedAt(createdAt string)
 
-	ID() string
+	GetID() string
 	SetID(id string)
 
-	Type() string
+	GetType() string
 	SetType(t string)
 
-	Meta(name string) string
+	GetMeta(name string) string
 	SetMeta(name, value string) error
 
-	Metas() (map[string]string, error)
+	GetMetas() (map[string]string, error)
 	SetMetas(metas map[string]string) error
 	UpsertMetas(metas map[string]string) error
 
-	Memo() string
+	GetMemo() string
 	SetMemo(memo string)
 
-	Payload() string
+	GetPayload() string
 	SetPayload(payload string)
 
-	PayloadMap() (map[string]any, error)
+	GetPayloadMap() (map[string]any, error)
 	SetPayloadMap(payloadMap map[string]any) error
-	PayloadMapKey(key string) (any, error)
+	GetPayloadMapKey(key string) (any, error)
 	SetPayloadMapKey(key string, value any) error
 
-	SoftDeletedAt() string
-	SoftDeletedAtCarbon() *carbon.Carbon
+	GetSoftDeletedAt() string
+	GetSoftDeletedAtCarbon() *carbon.Carbon
 	SetSoftDeletedAt(softDeletedAt string)
 
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
 	SetUpdatedAt(updatedAt string)
 }
 
@@ -136,14 +136,14 @@ func (o *recordImplementation) IsSoftDeleted() bool {
 // == GETTERS AND SETTERS
 // ============================================================================
 
-func (o *recordImplementation) CreatedAt() string {
+func (o *recordImplementation) GetCreatedAt() string {
 	if o.CreatedAtField.CreatedAt.IsZero() {
 		return ""
 	}
 	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt).ToDateTimeString()
 }
 
-func (o *recordImplementation) CreatedAtCarbon() *carbon.Carbon {
+func (o *recordImplementation) GetCreatedAtCarbon() *carbon.Carbon {
 	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt)
 }
 
@@ -154,7 +154,7 @@ func (o *recordImplementation) SetCreatedAt(createdAt string) {
 	o.CreatedAtField.CreatedAt = carbon.Parse(createdAt, carbon.UTC).StdTime()
 }
 
-func (o *recordImplementation) Type() string {
+func (o *recordImplementation) GetType() string {
 	return o.TypeField
 }
 
@@ -162,7 +162,7 @@ func (o *recordImplementation) SetType(recordType string) {
 	o.TypeField = recordType
 }
 
-func (o *recordImplementation) ID() string {
+func (o *recordImplementation) GetID() string {
 	return o.IDField
 }
 
@@ -170,7 +170,7 @@ func (o *recordImplementation) SetID(id string) {
 	o.IDField = id
 }
 
-func (o *recordImplementation) Memo() string {
+func (o *recordImplementation) GetMemo() string {
 	return o.MemoField
 }
 
@@ -178,7 +178,7 @@ func (o *recordImplementation) SetMemo(memo string) {
 	o.MemoField = memo
 }
 
-func (o *recordImplementation) Metas() (map[string]string, error) {
+func (o *recordImplementation) GetMetas() (map[string]string, error) {
 	metasStr := o.MetasField
 
 	if metasStr == "" {
@@ -198,8 +198,8 @@ func (o *recordImplementation) Metas() (map[string]string, error) {
 	return result, nil
 }
 
-func (o *recordImplementation) Meta(name string) string {
-	metas, err := o.Metas()
+func (o *recordImplementation) GetMeta(name string) string {
+	metas, err := o.GetMetas()
 
 	if err != nil {
 		return ""
@@ -233,7 +233,7 @@ func (o *recordImplementation) SetMetasRaw(metasStr string) {
 }
 
 func (o *recordImplementation) UpsertMetas(metas map[string]string) error {
-	currentMetas, err := o.Metas()
+	currentMetas, err := o.GetMetas()
 
 	if err != nil {
 		return err
@@ -246,7 +246,7 @@ func (o *recordImplementation) UpsertMetas(metas map[string]string) error {
 	return o.SetMetas(currentMetas)
 }
 
-func (o *recordImplementation) Payload() string {
+func (o *recordImplementation) GetPayload() string {
 	return o.PayloadField
 }
 
@@ -254,14 +254,14 @@ func (o *recordImplementation) SetPayload(payload string) {
 	o.PayloadField = payload
 }
 
-func (r *recordImplementation) PayloadMap() (map[string]any, error) {
+func (r *recordImplementation) GetPayloadMap() (map[string]any, error) {
 	data := make(map[string]any)
 
-	if r.Payload() == "" {
+	if r.GetPayload() == "" {
 		return data, nil
 	}
 
-	err := json.Unmarshal([]byte(r.Payload()), &data)
+	err := json.Unmarshal([]byte(r.GetPayload()), &data)
 
 	if err != nil {
 		return nil, err
@@ -280,8 +280,8 @@ func (record *recordImplementation) SetPayloadMap(metas map[string]any) error {
 	return nil
 }
 
-func (record *recordImplementation) PayloadMapKey(key string) (any, error) {
-	data, err := record.PayloadMap()
+func (record *recordImplementation) GetPayloadMapKey(key string) (any, error) {
+	data, err := record.GetPayloadMap()
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (record *recordImplementation) PayloadMapKey(key string) (any, error) {
 }
 
 func (record *recordImplementation) SetPayloadMapKey(key string, value any) error {
-	data, err := record.PayloadMap()
+	data, err := record.GetPayloadMap()
 	if err != nil {
 		return err
 	}
@@ -305,14 +305,14 @@ func (record *recordImplementation) SetPayloadMapKey(key string, value any) erro
 	return record.SetPayloadMap(data)
 }
 
-func (o *recordImplementation) SoftDeletedAt() string {
+func (o *recordImplementation) GetSoftDeletedAt() string {
 	if o.SoftDeletesMaxDate.SoftDeletedAt.IsZero() {
 		return ""
 	}
 	return carbon.CreateFromStdTime(o.SoftDeletesMaxDate.SoftDeletedAt).ToDateTimeString()
 }
 
-func (o *recordImplementation) SoftDeletedAtCarbon() *carbon.Carbon {
+func (o *recordImplementation) GetSoftDeletedAtCarbon() *carbon.Carbon {
 	return carbon.CreateFromStdTime(o.SoftDeletesMaxDate.SoftDeletedAt)
 }
 
@@ -323,14 +323,14 @@ func (o *recordImplementation) SetSoftDeletedAt(softDeletedAt string) {
 	o.SoftDeletesMaxDate.SoftDeletedAt = carbon.Parse(softDeletedAt, carbon.UTC).StdTime()
 }
 
-func (o *recordImplementation) UpdatedAt() string {
+func (o *recordImplementation) GetUpdatedAt() string {
 	if o.UpdatedAtField.UpdatedAt.IsZero() {
 		return ""
 	}
 	return carbon.CreateFromStdTime(o.UpdatedAtField.UpdatedAt).ToDateTimeString()
 }
 
-func (o *recordImplementation) UpdatedAtCarbon() *carbon.Carbon {
+func (o *recordImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
 	return carbon.CreateFromStdTime(o.UpdatedAtField.UpdatedAt)
 }
 

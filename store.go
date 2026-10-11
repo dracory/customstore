@@ -236,14 +236,14 @@ func (st *storeImplementation) RecordCreate(record RecordInterface) error {
 		return errors.New("database is not initialized")
 	}
 
-	if record.ID() == "" {
+	if record.GetID() == "" {
 		return errors.New("record ID is required")
 	}
 
 	record.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	record.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
-	metas, err := record.Metas()
+	metas, err := record.GetMetas()
 	if err != nil {
 		return err
 	}
@@ -253,14 +253,14 @@ func (st *storeImplementation) RecordCreate(record RecordInterface) error {
 	}
 
 	row := map[string]any{
-		COLUMN_ID:              record.ID(),
-		COLUMN_RECORD_TYPE:     record.Type(),
-		COLUMN_PAYLOAD:         record.Payload(),
+		COLUMN_ID:              record.GetID(),
+		COLUMN_RECORD_TYPE:     record.GetType(),
+		COLUMN_PAYLOAD:         record.GetPayload(),
 		COLUMN_METAS:           string(metasJSON),
-		COLUMN_MEMO:            record.Memo(),
-		COLUMN_CREATED_AT:      record.CreatedAtCarbon().StdTime(),
-		COLUMN_UPDATED_AT:      record.UpdatedAtCarbon().StdTime(),
-		COLUMN_SOFT_DELETED_AT: record.SoftDeletedAtCarbon().StdTime(),
+		COLUMN_MEMO:            record.GetMemo(),
+		COLUMN_CREATED_AT:      record.GetCreatedAtCarbon().StdTime(),
+		COLUMN_UPDATED_AT:      record.GetUpdatedAtCarbon().StdTime(),
+		COLUMN_SOFT_DELETED_AT: record.GetSoftDeletedAtCarbon().StdTime(),
 	}
 
 	if st.debugEnabled {
@@ -276,7 +276,7 @@ func (st *storeImplementation) RecordDelete(record RecordInterface) error {
 		return errors.New("record is nil")
 	}
 
-	return st.RecordDeleteByID(record.ID())
+	return st.RecordDeleteByID(record.GetID())
 }
 
 // RecordDeleteByID permanently deletes a record by ID
@@ -368,7 +368,7 @@ func (st *storeImplementation) RecordSoftDelete(record RecordInterface) error {
 		return errors.New("record is nil")
 	}
 
-	return st.RecordSoftDeleteByID(record.ID())
+	return st.RecordSoftDeleteByID(record.GetID())
 }
 
 // RecordSoftDeleteByID soft deletes a record by ID
@@ -396,13 +396,13 @@ func (st *storeImplementation) RecordUpdate(record RecordInterface) error {
 		return errors.New("record is nil")
 	}
 
-	if record.ID() == "" {
+	if record.GetID() == "" {
 		return errors.New("record id is required")
 	}
 
 	record.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString())
 
-	metas, err := record.Metas()
+	metas, err := record.GetMetas()
 	if err != nil {
 		return err
 	}
@@ -412,18 +412,18 @@ func (st *storeImplementation) RecordUpdate(record RecordInterface) error {
 	}
 
 	row := map[string]any{
-		COLUMN_RECORD_TYPE: record.Type(),
-		COLUMN_PAYLOAD:     record.Payload(),
+		COLUMN_RECORD_TYPE: record.GetType(),
+		COLUMN_PAYLOAD:     record.GetPayload(),
 		COLUMN_METAS:       string(metasJSON),
-		COLUMN_MEMO:        record.Memo(),
-		COLUMN_UPDATED_AT:  record.UpdatedAtCarbon().StdTime(),
+		COLUMN_MEMO:        record.GetMemo(),
+		COLUMN_UPDATED_AT:  record.GetUpdatedAtCarbon().StdTime(),
 	}
 
 	if st.debugEnabled {
 		st.logger.Debug("Record update", "row", row)
 	}
 
-	_, err = st.db.Query().Table(st.tableName).Where(COLUMN_ID+" = ?", record.ID()).Update(row)
+	_, err = st.db.Query().Table(st.tableName).Where(COLUMN_ID+" = ?", record.GetID()).Update(row)
 	return err
 }
 

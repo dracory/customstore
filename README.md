@@ -47,7 +47,7 @@ func example(db *sql.DB) error {
     if err != nil { return err }
 
     for _, r := range recs {
-        // use r.ID(), r.Type(), r.Payload(), ...
+        // use r.GetID(), r.GetType(), r.GetPayload(), ...
     }
     return nil
 }
