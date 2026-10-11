@@ -93,15 +93,15 @@ func TestRecordCreate(t *testing.T) {
 	}
 
 	// Assuming default ID length is 32, check against that
-	if record.ID() == "" {
+	if record.GetID() == "" {
 		t.Fatalf("Expected Record ID to be generated, but was empty")
 	}
 
-	if record.CreatedAt() == "" {
+	if record.GetCreatedAt() == "" {
 		t.Fatalf("Record CreatedAt is empty")
 	}
 
-	if record.UpdatedAt() == "" {
+	if record.GetUpdatedAt() == "" {
 		t.Fatalf("Record UpdatedAt is empty")
 	}
 
@@ -142,11 +142,11 @@ func TestRecordFindByID(t *testing.T) {
 	}
 
 	// Check ID length again for consistency
-	if record.ID() == "" {
+	if record.GetID() == "" {
 		t.Fatalf("Expected Record ID to be generated, but was empty")
 	}
 
-	retrievedRecord, errFind := store.RecordFindByID(record.ID())
+	retrievedRecord, errFind := store.RecordFindByID(record.GetID())
 	if errFind != nil {
 		t.Fatalf("RecordFindByID failed: %v", errFind)
 	}
@@ -157,8 +157,8 @@ func TestRecordFindByID(t *testing.T) {
 
 	// Compare payload string
 	expectedPayload := `{"name":"Jon"}`
-	if retrievedRecord.Payload() != expectedPayload {
-		t.Fatalf("Expected payload %q, but got %q", expectedPayload, retrievedRecord.Payload())
+	if retrievedRecord.GetPayload() != expectedPayload {
+		t.Fatalf("Expected payload %q, but got %q", expectedPayload, retrievedRecord.GetPayload())
 	}
 
 	// Test with non-existent ID
@@ -170,7 +170,7 @@ func TestRecordFindByID(t *testing.T) {
 	}
 
 	if retrievedRecord != nil {
-		t.Fatalf("Expected nil when finding non-existent record, but got a record with ID %s", retrievedRecord.ID())
+		t.Fatalf("Expected nil when finding non-existent record, but got a record with ID %s", retrievedRecord.GetID())
 	}
 }
 
@@ -205,9 +205,9 @@ func TestRecordUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Record could not be created: %v", err)
 	}
-	initialUpdatedAt := record.UpdatedAt() // Store initial timestamp
+	initialUpdatedAt := record.GetUpdatedAt() // Store initial timestamp
 
-	retrievedRecord, errFind := store.RecordFindByID(record.ID())
+	retrievedRecord, errFind := store.RecordFindByID(record.GetID())
 	if errFind != nil {
 		t.Fatalf("RecordFindByID failed: %v", errFind)
 	}
@@ -216,9 +216,9 @@ func TestRecordUpdate(t *testing.T) {
 	}
 
 	// Verify initial payload (consider JSON key order might vary)
-	retrievedPayloadMap, err := retrievedRecord.PayloadMap()
+	retrievedPayloadMap, err := retrievedRecord.GetPayloadMap()
 	if err != nil {
-		t.Fatalf("retrievedRecord.PayloadMap failed: %v", err)
+		t.Fatalf("retrievedRecord.GetPayloadMap failed: %v", err)
 	}
 	if !reflect.DeepEqual(initialPayload, retrievedPayloadMap) {
 		t.Fatalf("Initial payload mismatch. Expected %v, got %v", initialPayload, retrievedPayloadMap)
@@ -243,7 +243,7 @@ func TestRecordUpdate(t *testing.T) {
 	}
 
 	// Retrieve again to verify update
-	retrievedRecord2, errFind := store.RecordFindByID(record.ID())
+	retrievedRecord2, errFind := store.RecordFindByID(record.GetID())
 	if errFind != nil {
 		t.Fatalf("RecordFindByID after update failed: %v", errFind)
 	}
@@ -252,16 +252,16 @@ func TestRecordUpdate(t *testing.T) {
 	}
 
 	// Verify updated payload
-	retrievedPayloadMap2, err := retrievedRecord2.PayloadMap()
+	retrievedPayloadMap2, err := retrievedRecord2.GetPayloadMap()
 	if err != nil {
-		t.Fatalf("retrievedRecord2.PayloadMap failed: %v", err)
+		t.Fatalf("retrievedRecord2.GetPayloadMap failed: %v", err)
 	}
 	if !reflect.DeepEqual(updatedPayload, retrievedPayloadMap2) {
 		t.Fatalf("Updated payload mismatch. Expected %v, got %v", updatedPayload, retrievedPayloadMap2)
 	}
 
 	// Verify UpdatedAt timestamp changed
-	if retrievedRecord2.UpdatedAt() == initialUpdatedAt {
+	if retrievedRecord2.GetUpdatedAt() == initialUpdatedAt {
 		t.Fatalf("Expected UpdatedAt timestamp to change after update, but it remained %s", initialUpdatedAt)
 	}
 }
@@ -296,12 +296,12 @@ func TestRecordDelete(t *testing.T) {
 	}
 
 	// Verify it's gone
-	retrievedRecord, errFind := store.RecordFindByID(record.ID())
+	retrievedRecord, errFind := store.RecordFindByID(record.GetID())
 	if errFind != nil {
 		t.Fatalf("RecordFindByID after delete failed unexpectedly: %v", errFind)
 	}
 	if retrievedRecord != nil {
-		t.Fatalf("Expected record to be nil after delete, but found record with ID %s", retrievedRecord.ID())
+		t.Fatalf("Expected record to be nil after delete, but found record with ID %s", retrievedRecord.GetID())
 	}
 
 	// Test deleting a non-existent ID (should not error)
@@ -341,12 +341,12 @@ func TestRecordSoftDelete(t *testing.T) {
 	}
 
 	// Verify it's not found by default find
-	retrievedRecord, errFind := store.RecordFindByID(record.ID())
+	retrievedRecord, errFind := store.RecordFindByID(record.GetID())
 	if errFind != nil {
 		t.Fatalf("RecordFindByID after soft delete failed unexpectedly: %v", errFind)
 	}
 	if retrievedRecord != nil {
-		t.Fatalf("Expected record to be nil after soft delete (default find), but found record with ID %s", retrievedRecord.ID())
+		t.Fatalf("Expected record to be nil after soft delete (default find), but found record with ID %s", retrievedRecord.GetID())
 	}
 
 	// Test soft deleting a non-existent ID (should not error if find returns nil)
@@ -357,7 +357,7 @@ func TestRecordSoftDelete(t *testing.T) {
 
 	// Test finding with soft deleted included
 	// Use customstore.RecordQuery
-	query := customstore.RecordQuery().SetSoftDeletedIncluded(true).SetID(record.ID())
+	query := customstore.RecordQuery().SetSoftDeletedIncluded(true).SetID(record.GetID())
 	list, err := store.RecordList(query)
 	if err != nil {
 		t.Fatalf("RecordList with soft deleted included failed: %v", err)
@@ -366,8 +366,8 @@ func TestRecordSoftDelete(t *testing.T) {
 	if len(list) != 1 {
 		t.Fatalf("Expected 1 record when including soft deleted, but got %d", len(list))
 	}
-	if list[0].ID() != record.ID() {
-		t.Fatalf("Found wrong record ID. Expected %s, got %s", record.ID(), list[0].ID())
+	if list[0].GetID() != record.GetID() {
+		t.Fatalf("Found wrong record ID. Expected %s, got %s", record.GetID(), list[0].GetID())
 	}
 
 	time.Sleep(1 * time.Second) // Wait for the soft delete timestamp to update (to be in the past)
@@ -428,15 +428,15 @@ func TestRecordList(t *testing.T) {
 	// Check payloads (more robustly)
 	foundNames := map[string]bool{}
 	for _, rec := range list {
-		payloadMap, err := rec.PayloadMap()
+		payloadMap, err := rec.GetPayloadMap()
 		if err != nil {
-			t.Errorf("PayloadMap failed for record %s: %v", rec.ID(), err)
+			t.Errorf("GetPayloadMap failed for record %s: %v", rec.GetID(), err)
 			continue
 		}
 		if name, ok := payloadMap["name"].(string); ok {
 			foundNames[name] = true
 		} else {
-			t.Errorf("Payload for record %s does not contain a string 'name': %v", rec.ID(), payloadMap)
+			t.Errorf("Payload for record %s does not contain a string 'name': %v", rec.GetID(), payloadMap)
 		}
 	}
 
@@ -544,7 +544,7 @@ func TestRecordQuery(t *testing.T) {
 	if len(list) != 1 {
 		t.Fatalf("Expected list length 1 for type 'person', but got %d", len(list))
 	}
-	payloadMap, _ := list[0].PayloadMap()
+	payloadMap, _ := list[0].GetPayloadMap()
 	if name, _ := payloadMap["name"].(string); name != "Jon" {
 		t.Fatalf("Expected record name 'Jon', but got %q", name)
 	}
@@ -807,9 +807,9 @@ func TestRecordQueryPayloadSearch(t *testing.T) {
 			}
 
 			if tc.expectedCount == 1 && tc.expectedName != "" {
-				payloadMap, err := list[0].PayloadMap()
+				payloadMap, err := list[0].GetPayloadMap()
 				if err != nil {
-					t.Fatalf("PayloadMap failed for result of search %q: %v", tc.searchTerm, err)
+					t.Fatalf("GetPayloadMap failed for result of search %q: %v", tc.searchTerm, err)
 				}
 				if name, ok := payloadMap["name"].(string); !ok || name != tc.expectedName {
 					t.Fatalf("Expected first result name %q for search %q, but got %q (payload: %v)", tc.expectedName, tc.searchTerm, name, payloadMap)
@@ -836,9 +836,9 @@ func TestRecordQueryPayloadSearch(t *testing.T) {
 		// Verify we got both approved and draft records
 		statusCounts := map[string]int{"approved": 0, "draft": 0}
 		for _, record := range list {
-			payloadMap, err := record.PayloadMap()
+			payloadMap, err := record.GetPayloadMap()
 			if err != nil {
-				t.Fatalf("PayloadMap failed: %v", err)
+				t.Fatalf("GetPayloadMap failed: %v", err)
 			}
 			if status, ok := payloadMap["status"].(string); ok {
 				statusCounts[status]++
@@ -870,9 +870,9 @@ func TestRecordQueryPayloadSearch(t *testing.T) {
 
 		// Verify we got the right records
 		for _, record := range list {
-			payloadMap, err := record.PayloadMap()
+			payloadMap, err := record.GetPayloadMap()
 			if err != nil {
-				t.Fatalf("PayloadMap failed: %v", err)
+				t.Fatalf("GetPayloadMap failed: %v", err)
 			}
 
 			// Should be approved

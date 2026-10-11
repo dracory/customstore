@@ -10,30 +10,30 @@ import (
 
 func TestWithID(t *testing.T) {
     r := customstore.NewRecord("test", customstore.WithID("my-id-123"))
-    if r.ID() != "my-id-123" {
-        t.Fatalf("WithID not applied, expected my-id-123, got %s", r.ID())
+    if r.GetID() != "my-id-123" {
+        t.Fatalf("WithID not applied, expected my-id-123, got %s", r.GetID())
     }
 }
 
 func TestWithMemo(t *testing.T) {
     r := customstore.NewRecord("test", customstore.WithMemo("hello memo"))
-    if r.Memo() != "hello memo" {
-        t.Fatalf("WithMemo not applied, expected 'hello memo', got %s", r.Memo())
+    if r.GetMemo() != "hello memo" {
+        t.Fatalf("WithMemo not applied, expected 'hello memo', got %s", r.GetMemo())
     }
 }
 
 func TestWithPayload(t *testing.T) {
     json := `{"a":1,"b":"two"}`
     r := customstore.NewRecord("test", customstore.WithPayload(json))
-    if r.Payload() != json {
-        t.Fatalf("WithPayload not applied, expected %s, got %s", json, r.Payload())
+    if r.GetPayload() != json {
+        t.Fatalf("WithPayload not applied, expected %s, got %s", json, r.GetPayload())
     }
 }
 
 func TestWithPayloadMap(t *testing.T) {
     mp := map[string]any{"x": 9, "y": "yes"}
     r := customstore.NewRecord("test", customstore.WithPayloadMap(mp))
-    got, err := r.PayloadMap()
+    got, err := r.GetPayloadMap()
     if err != nil {
         t.Fatalf("PayloadMap returned error: %v", err)
     }
@@ -45,7 +45,7 @@ func TestWithPayloadMap(t *testing.T) {
 func TestWithMetas(t *testing.T) {
     metas := map[string]string{"k1": "v1", "k2": "v2"}
     r := customstore.NewRecord("test", customstore.WithMetas(metas))
-    got, err := r.Metas()
+    got, err := r.GetMetas()
     if err != nil {
         t.Fatalf("Metas returned error: %v", err)
     }

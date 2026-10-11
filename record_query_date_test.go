@@ -22,7 +22,7 @@ func seedRecordWithDate(t *testing.T, store customstore.StoreInterface, recordTy
 	if db == nil {
 		t.Fatal("store DB is nil")
 	}
-	_, err := db.Exec("UPDATE data_record_date SET created_at = ? WHERE id = ?", createdAt, rec.ID())
+	_, err := db.Exec("UPDATE data_record_date SET created_at = ? WHERE id = ?", createdAt, rec.GetID())
 	if err != nil {
 		t.Fatalf("failed to override created_at: %v", err)
 	}
