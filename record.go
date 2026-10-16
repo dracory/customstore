@@ -2,10 +2,10 @@ package customstore
 
 import (
 	"encoding/json"
+	"uuid"
 
 	"github.com/dracory/neat/database/orm"
 	"github.com/dracory/neat/database/soft_delete"
-	neatuid "github.com/dracory/neat/support/uid"
 	"github.com/dromara/carbon/v2"
 	"github.com/spf13/cast"
 )
@@ -78,7 +78,7 @@ type recordImplementation struct {
 
 func NewRecord(recordType string, opts ...RecordOption) RecordInterface {
 	record := &recordImplementation{}
-	record.SetID(neatuid.GenerateShortID())
+	record.SetID(uuid.NewV7().String())
 	record.SetType(recordType)
 	record.SetMemo("")
 	record.SetMetas(map[string]string{})
