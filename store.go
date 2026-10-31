@@ -480,16 +480,22 @@ func (st *storeImplementation) buildQuery(query RecordQueryInterface) contractso
 	// Payload search (OR within positive searches, AND for negative)
 	searchTerms := query.GetPayloadSearch()
 	if len(searchTerms) > 0 {
-		var searchQuery strings.Builder
-		searchArgs := make([]any, 0, len(searchTerms))
-		for i, needle := range searchTerms {
-			if i > 0 {
-				searchQuery.WriteString(" OR ")
+		if len(searchTerms) == 1 {
+			// Single-term form must stay a simple "operand OP ?" condition:
+			// neat rejects parenthesized raw expressions bound to one arg.
+			q = q.Where(COLUMN_PAYLOAD+" LIKE ?", "%"+searchTerms[0]+"%")
+		} else {
+			var searchQuery strings.Builder
+			searchArgs := make([]any, 0, len(searchTerms))
+			for i, needle := range searchTerms {
+				if i > 0 {
+					searchQuery.WriteString(" OR ")
+				}
+				searchQuery.WriteString(COLUMN_PAYLOAD + " LIKE ?")
+				searchArgs = append(searchArgs, "%"+needle+"%")
 			}
-			searchQuery.WriteString(COLUMN_PAYLOAD + " LIKE ?")
-			searchArgs = append(searchArgs, "%"+needle+"%")
+			q = q.Where("("+searchQuery.String()+")", searchArgs...)
 		}
-		q = q.Where("("+searchQuery.String()+")", searchArgs...)
 	}
 	for _, needle := range query.GetPayloadSearchNot() {
 		q = q.Where(COLUMN_PAYLOAD+" NOT LIKE ?", "%"+needle+"%")
